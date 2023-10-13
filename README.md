@@ -1,4 +1,4 @@
-# Puzzle Hi-C
+# Puzzle Hi-C: an accurate scaffolding software
 
 for genome assembly
 
