@@ -17,7 +17,7 @@ optional arguments:
   -s BINSIZE, --binsize BINSIZE
                         The bin size!
   -m MATRIX, --matrix MATRIX
-                        The matrix file path!
+                        The matrix file path! jucier's output (no_merge.txt)
   -f FASTA, --fasta FASTA
                         Scaffold fasta file!
   -t CUTOFF, --cutoff CUTOFF
