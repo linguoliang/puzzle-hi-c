@@ -1,0 +1,6 @@
+biopython==1.78
+h5py==3.7.0
+networkx==2.8.4
+numpy==1.22.3
+pandas==1.5.1
+tqdm==4.64.1
