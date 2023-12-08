@@ -21,14 +21,15 @@ from Bio.SeqRecord import SeqRecord
 # import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--clusters', required=True, type=int, help='Chromosomes number!')
-parser.add_argument("-p", '--prefix', default="sample", type=str, help='Prefix!')
-parser.add_argument('-s', '--binsize', default=10000, type=int, help='The bin size!')
-parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path!')
-parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file!')
-parser.add_argument('-t', '--cutoff', default=0.5, type=float, help='Score cutoff!')
-parser.add_argument('-i', '--init_trianglesize', default=6, type=int, help='init_trianglesize!')
-parser.add_argument('-n', '--ncpus', default=1, type=int, help='Number of threads used for computering!')
+parser.add_argument('-c', '--clusters', required=True, type=int, help='Chromosomes number.')
+parser.add_argument("-p", '--prefix', default="sample", type=str, help='Prefix')
+parser.add_argument('-s', '--binsize', default=10000, type=int, help='The bin size.')
+parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path.')
+parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file.')
+parser.add_argument('-t', '--cutoff', default=0.5, type=float, help='Score cutoff.')
+parser.add_argument('-i', '--init_trianglesize', default=6, type=int, help='init_trianglesize.')
+parser.add_argument('-n', '--ncpus', default=1, type=int, help='Number of threads used for computering.')
+parser.add_argument("-j","--juicer_tools",required=True,type=str,help="juicer_tools path.")
 
 ## 定义每个连接方式序列对应的头部和尾部contig的方向，0代表头部，1代表尾部,0和1分别代表apg文件中得正向和反向
 head_dict = {0: 1, 1: 0, 2: 1, 3: 0}
@@ -114,16 +115,16 @@ def read_gloable_repeat_density(filename):
 
 ### 简化内存使用量
 ###具体方法，对concat数据进行排序，获得
-def return_dict_matrix(scaffold, scaffold2, Scaffolds_len_dict, maxlength):
-    matrix_dict = {}
-    a = scaffold
+def return_dict_matrix(maxlength):
+    # matrix_dict = {}
+    # a = scaffold
     # a_len = Scaffolds_len_dict[scaffold]
     a_bin = maxlength
     #     size_dict[a]=a_bin
     #     matrix_dict={}
     #     for y in range(ord_scaffold_dict[scaffold]+1,len(Contig_ID)):
     #     print(a_len)
-    b = scaffold2
+    # b = scaffold2
     # b_len = Scaffolds_len_dict[b]
     b_bin = maxlength
     #         size_dict[b]=b_bin
@@ -201,7 +202,7 @@ def get_links(filename):
                 item = rawitem.strip().split()
                 scaffold = item[1]
                 scaffold2 = item[5]
-                matrix_dict = return_dict_matrix(scaffold, scaffold2, Scaffolds_len_dict, maxlength)
+                matrix_dict = return_dict_matrix(maxlength)
                 str1, chr1, pos1, frag1, str2, chr2, pos2, frag2 = 0, 1, 2, 3, 4, 5, 6, 7
                 inputfile.seek(0)
                 for rawitem in inputfile:
@@ -291,7 +292,7 @@ def get_links(filename):
                         #                     tri_weight[ord_scaffold_dict[x],ord_scaffold_dict[y]]=np.argmax([lus,lds,rus,rds])
                         scaffold = tmp_scaffold
                         scaffold2 = tmp_scaffold2
-                        matrix_dict = return_dict_matrix(scaffold, scaffold2, Scaffolds_len_dict, maxlength)
+                        matrix_dict = return_dict_matrix(maxlength)
 
                     if (item[1] == scaffold) and (item[5] == scaffold2):
                         if bin1 < size_dict[item[1]]:
@@ -1204,7 +1205,7 @@ if __name__ == "__main__":
     clusters = args.clusters
     cutoff = args.cutoff
     converscript = "/public/home/lgl/bin/conver_data_for_hic-Copy1.py"
-    juicer_tools = "/public/home/lgl/software/juicer/PBS/scripts/juicer_tools"
+    juicer_tools = args.juicer_tools
     code = args.prefix
     orig_contact = args.matrix
     fastafile_name = args.fasta

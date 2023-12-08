@@ -28,3 +28,7 @@ optional arguments:
                         Number of threads used for computering!
 
 ```
+## Install required packages
+```bash
+pip install -r requirements.txt
+```
