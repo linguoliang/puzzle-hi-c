@@ -2,6 +2,12 @@
 
 High-quality, chromosome-scale genomes are essential for genomic analyses. Analyses, including 3D genomics, epigenetics, and comparative genomics, rely on a high-quality genome assembly, which is often assembled with the assistance of Hi-C data. However, current Hi-C assisted assembling algorithms either generate ordering and orientation errors, or fail to assemble high-quality chromosome-level scaffolds. Here, we offer Puzzle Hi-C, which is software that uses Hi-C reads to assign accurately contigs or scaffolds to chromosomes. Puzzle Hi-C uses the triangle region instead of the square region to count interactions in a Hi-C heatmap. This strategy dramatically diminishes scaffolding interference caused by long-range interactions. This software also introduces a dynamic, triangle window strategy during assembling. The triangle window is initially small and expands with interactions to produce more effective clustering. We show that Puzzle Hi-C outperforms state-of-the-art tools for scaffolding.
 
+## Install required packages
+7
+```bash
+pip install -r requirements.txt
+```
+
 ## Usage
 ```bash
 usage: Puzzle_Hi-C_test_c [-h] -c CLUSTERS [-p PREFIX] [-s BINSIZE] -m MATRIX
@@ -29,7 +35,5 @@ optional arguments:
                         Number of threads used for computering!
 
 ```
-## Install required packages
-```bash
-pip install -r requirements.txt
-```
+
+
