@@ -17,6 +17,7 @@ import pandas as pd
 import tqdm
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+import utils.convert_data as converscript
 
 # import numpy as np
 
@@ -29,7 +30,7 @@ parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fas
 parser.add_argument('-t', '--cutoff', default=0.5, type=float, help='Score cutoff.')
 parser.add_argument('-i', '--init_trianglesize', default=6, type=int, help='init_trianglesize.')
 parser.add_argument('-n', '--ncpus', default=1, type=int, help='Number of threads used for computering.')
-parser.add_argument("-j","--juicer_tools",required=True,type=str,help="juicer_tools path.")
+parser.add_argument("-j","--juicer_tools",required=True,type=str,help="juicer_tools path. e.g.:")
 
 ## 定义每个连接方式序列对应的头部和尾部contig的方向，0代表头部，1代表尾部,0和1分别代表apg文件中得正向和反向
 head_dict = {0: 1, 1: 0, 2: 1, 3: 0}
@@ -1204,7 +1205,7 @@ if __name__ == "__main__":
     ##记录聚类次数
     clusters = args.clusters
     cutoff = args.cutoff
-    converscript = "/public/home/lgl/bin/conver_data_for_hic-Copy1.py"
+    # converscript = "/public/home/lgl/bin/conver_data_for_hic-Copy1.py"
     juicer_tools = args.juicer_tools
     code = args.prefix
     orig_contact = args.matrix
@@ -1483,10 +1484,11 @@ if __name__ == "__main__":
             outfiles.write("{}\t{}\n".format(scaffold, chrom_size_dict[scaffold]))
 
     # In[30]:
-    subprocess.run("python {0} {1} {2} {3}".format(converscript, "{}.Chrom.sizes".format(code),
-                                                   contact_file.format(iteration),
-                                                   contact_file.format(iteration) + ".re"),
-                   shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    converscript.convert_data("{}.Chrom.sizes".format(code),contact_file.format(iteration),contact_file.format(iteration) + ".re")
+    # subprocess.run("python {0} {1} {2} {3}".format(converscript, "{}.Chrom.sizes".format(code),
+    #                                                contact_file.format(iteration),
+    #                                                contact_file.format(iteration) + ".re"),
+    #                shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     subprocess.run("sort -k2,2 -k6,6 --parallel={0} {1}>{2}".format(Process_num,
                                                                     contact_file.format(iteration) + ".re",
                                                                     contact_file.format(iteration) + ".re.sort"),
