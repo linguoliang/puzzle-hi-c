@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--clusters', required=True, type=int, help='Chromosomes number.')
 parser.add_argument("-p", '--prefix', default="sample", type=str, help='Prefix')
 parser.add_argument('-s', '--binsize', default=10000, type=int, help='The bin size.')
-parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path.')
+parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path.eg: merge_nodup.txt')
 parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file.')
 parser.add_argument('-t', '--cutoff', default=0.5, type=float, help='Score cutoff.')
 parser.add_argument('-i', '--init_trianglesize', default=6, type=int, help='init_trianglesize.')
@@ -906,6 +906,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
 def generate_final_agp(Chrom_Dict):
     all_agp = pd.DataFrame(data=[], columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
                                              "Contig_end", "Orientation"])
+    agp_list=[]
     for chrom in Chrom_Dict:
         temp_list = []
         for i in range(len(Chrom_Dict[chrom]["Scaffold"])):
@@ -931,7 +932,12 @@ def generate_final_agp(Chrom_Dict):
             #             scaffold_index_dict[agp_list[i].iloc[j,5]]=i
             tempagp.iloc[j, 1] = int(tempagp.iloc[j - 1, 2]) + 1 + 100
             tempagp.iloc[j, 2] = int(tempagp.iloc[j, 1]) + int(tempagp.iloc[j, 7]) - 1
-        all_agp = all_agp.append(tempagp)
+        agp_list.append([chrom,tempagp.iloc[-1, 2],tempagp])
+        # all_agp = all_agp.append(tempagp)
+    agp_list.sort(key=lambda i:i[1],reverse=True)
+    for i in range(len(agp_list)):
+        agp_list[i][2].iloc[:,0]=f"scaffold_{i+1}"
+        all_agp=all_agp.append(agp_list[i][2])
     return all_agp
 
 
@@ -1191,6 +1197,15 @@ def find_error_connection(path,orientations,index_Scaffold_dict,connections,Chro
                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/pre_contig_edge', data=pre_contig_edge)
                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/contig_edge', data=contig_edge)
 
+def get_short_format(orig_contact):
+    with open(orig_contact) as inputfile:
+        with open("merged_nodups_short_format.txt", 'w') as outfile:
+            for item in inputfile:
+                itemlist = item.split()
+                # if (int(itemlist[8]) >= quality) and (int(itemlist[11]) >= quality):
+                outfile.write("\t".join(itemlist[0:8]) + '\n')
+
+
 # parser.add_argument("-b", "--bed", required=True, type=str, help="The bed file path!")
 # parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path!')
 if __name__ == "__main__":
@@ -1208,7 +1223,8 @@ if __name__ == "__main__":
     # converscript = "/public/home/lgl/bin/conver_data_for_hic-Copy1.py"
     juicer_tools = args.juicer_tools
     code = args.prefix
-    orig_contact = args.matrix
+    get_short_format(args.matrix)
+    orig_contact="merged_nodups_short_format.txt"
     fastafile_name = args.fasta
 
     init_trianglesize = args.init_trianglesize

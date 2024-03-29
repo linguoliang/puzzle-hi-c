@@ -21,11 +21,10 @@ pip install -r requirements.txt
 
 ## Usage
 ```bash
-usage: Puzzle_Hi-C_test_c [-h] -c CLUSTERS [-p PREFIX] [-s BINSIZE] -m MATRIX
-                          -f FASTA [-t CUTOFF] [-i INIT_TRIANGLESIZE]
-                          [-n NCPUS]
+usage: main.py [-h] -c CLUSTERS [-p PREFIX] [-s BINSIZE] -m MATRIX -f FASTA
+               [-t CUTOFF] [-i INIT_TRIANGLESIZE] [-n NCPUS] -j JUICER_TOOLS
 
-options:
+optional arguments:
   -h, --help            show this help message and exit
   -c CLUSTERS, --clusters CLUSTERS
                         Chromosomes number.
@@ -34,7 +33,7 @@ options:
   -s BINSIZE, --binsize BINSIZE
                         The bin size.
   -m MATRIX, --matrix MATRIX
-                        The matrix file path.
+                        The matrix file path.eg: merge_nodup.txt
   -f FASTA, --fasta FASTA
                         Scaffold fasta file.
   -t CUTOFF, --cutoff CUTOFF
@@ -45,8 +44,10 @@ options:
                         Number of threads used for computering.
   -j JUICER_TOOLS, --juicer_tools JUICER_TOOLS
                         juicer_tools path.
-
-
+                        
+eg: python3 main.py -c 10 -p genome -m 
 ```
+
+
 
 
