@@ -790,13 +790,13 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     print(f'iteration:{iteration}')
     connections,Chrom_Dict_for_error_corection=get_all_conections(iteration,agp_iter_name,init_agp,connections,conection_dict)
     try:
-        all_stath5py=h5py.File('all_stat.h5', "w-")
+        all_stath5py=h5py.File(f'{inputfile}_all_stat.h5', "w-")
     except FileExistsError:
         print("File already Exist")
     else:
         all_stath5py.close()
     with h5py.File("init_contact_map.h5",'r') as h5file:
-        with h5py.File('all_stat.h5',"r+") as h5write:
+        with h5py.File(f'{inputfile}_all_stat.h5',"r+") as h5write:
             for path_list in allpaths:
                 find_error_connection(path_list,oritention,index_Scaffold_dict,connections,Chrom_Dict_for_error_corection,h5file,h5write)
                 temp_error = []
