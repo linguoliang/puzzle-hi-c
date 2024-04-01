@@ -7,9 +7,11 @@ import pickle
 import subprocess
 import sys
 from multiprocessing import Pool, cpu_count
+# import matplotlib.pyplot as plt
 
 # import argparse
 import h5py
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 # In[1]:
@@ -140,6 +142,8 @@ def read_raw_data(filename):
         ord_scaffold_dict = pickle.loads(rawdata["ord_scaffold_dict"][()])
     with open(filename) as inputfile:
         with open(filename + ".re", 'w') as outputfile:
+            tmp_write = []
+            count = 0
             #             inputfile.readline()
             for item in inputfile:
                 itemlist = item.strip().split('\t')
@@ -148,7 +152,15 @@ def read_raw_data(filename):
                 if (itemlist[1] in ord_scaffold_dict) and (itemlist[5] in ord_scaffold_dict):
                     if ord_scaffold_dict[itemlist[1]] > ord_scaffold_dict[itemlist[5]]:
                         itemlist[0:4], itemlist[4:8] = itemlist[4:8], itemlist[0:4]
-                    outputfile.write("\t".join(itemlist) + '\n')
+                    tmp_write.append("\t".join(itemlist) + '\n')
+                    count += 1
+                    if count > 1999:
+                        outputfile.writelines(tmp_write)
+                        tmp_write = []
+                        count = 0
+            if len(tmp_write) > 0:
+                outputfile.writelines(tmp_write)
+                # outputfile.write("\t".join(itemlist) + '\n')
 
 
 def read_repeat_density(filename):
@@ -644,7 +656,15 @@ def convert_contactmat(inputfile):
         Scaffold_dict_list = pickle.loads(convert["Scaffold_dict_list"][()])
         scaffold_index_dict = pickle.loads(convert["scaffold_index_dict"][()])
         fake_chrom_dict = pickle.loads(convert["fake_chrom_dict"][()])
+        faker_scaffold_len_dict=pickle.loads(convert["faker_scaffold_len_dict"][()])
+        binsize = convert["binsize"][()]
+        # convert["faker_scaffold_len_dict"] = pickle.dumps(faker_scaffold_len_dict, protocol=0)
+    # add function for correction
+    correct_dict={}
+    # with h5py.File(f"tmp/{inputfile}.h5",'w') as stats:
     with open(inputfile) as HiCdata:
+        tmp_write=[]
+        count=0
         with open(inputfile + ".re", 'w') as Record:
             for x in HiCdata:
                 x = x.strip()
@@ -663,13 +683,33 @@ def convert_contactmat(inputfile):
                         pos2 = chr2info[2] + int(x[6]) - 1
                     else:
                         pos2 = chr2info[3] - int(x[6]) + 1
-                    x[1] = fake_chrom_dict[chr1index]
-                    x[5] = fake_chrom_dict[chr2index]
+                    chr1=fake_chrom_dict[chr1index]
+                    chr2=fake_chrom_dict[chr2index]
+                    if chr1==chr2 and faker_scaffold_len_dict[chr1]>1000000 and chr1!=x[1]:
+                        distant=abs(pos2-pos1)
+                        if distant>20000:
+                            if chr1 in correct_dict:
+                                correct_dict[chr1][pos1 // binsize] += 1
+                                correct_dict[chr1][pos2 // binsize] += 1
+                        else:
+                                correct_dict[chr1]=np.zeros(faker_scaffold_len_dict[chr1]//binsize+1,dtype=np.int32)
+                                correct_dict[chr1][pos1//binsize]+=1
+                                correct_dict[chr1][pos2 // binsize] += 1
+                    x[1] = chr1
+                    x[5] = chr2
                     x[2] = str(pos1)
                     x[6] = str(pos2)
-                    Record.write("\t".join(x) + '\n')
-
-
+                    # for correction
+                    tmp_write.append("\t".join(x) + '\n')
+                    count += 1
+                    if count>1999:
+                        Record.writelines(tmp_write)
+                        tmp_write=[]
+                        count=0
+            if len(tmp_write)>0:
+                Record.writelines(tmp_write)
+    with h5py.File(f"{inputfile}.h5",'w') as stats:
+        stats["correct_dict"]=pickle.dumps(correct_dict,protocol=0)
 def build_index_scaffold(Scaffold_dict):
     index_Scaffold_dict = {}
     for key in range(len(Scaffold_dict)):
@@ -750,7 +790,7 @@ def buil_oritention_matrix(oritention):
 
 
 def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agpfilename,init_agp,
-               cutoff, Process_num=10,connections=None):
+               cutoff, Process_num=10,connections=None,binsize=10000):
     index_Scaffold_dict = {}
     for key in range(len(Scaffold_dict)):
         index_Scaffold_dict[key] = Scaffold_dict[key]
@@ -891,16 +931,42 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
         convert["Scaffold_dict_list"] = pickle.dumps(Scaffold_dict_list, protocol=0)
         convert["scaffold_index_dict"] = pickle.dumps(scaffold_index_dict, protocol=0)
         convert["fake_chrom_dict"] = pickle.dumps(fake_chrom_dict, protocol=0)
+        convert["faker_scaffold_len_dict"] = pickle.dumps(faker_scaffold_len_dict, protocol=0)
+        convert["binsize"] = binsize
     list_temp_names = []
     for i in range(Process_num):
         list_temp_names.append("tmp/{0}{1:0>3d}".format("convertemp", i))
     with Pool(processes=Process_num) as pool:
         pool.map(convert_contactmat, list_temp_names)
+    # for correction purpose
+    correct_dict = {}
+    for correct_dict_file_name in list_temp_names:
+        # print(f"")
+        with h5py.File(f"{correct_dict_file_name}.h5", 'r') as stats:
+            temp_correct = pickle.loads(stats["correct_dict"][()])
+            for chr1 in temp_correct:
+                if chr1 in correct_dict:
+                    correct_dict[chr1] += temp_correct[chr1]
+                else:
+                    correct_dict[chr1] = temp_correct[chr1]
+    subprocess.run("mkdir -p correct_file", shell=True, check=True, stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE)
+    for chr1 in correct_dict:
+        plt.plot(correct_dict[chr1].T)
+        plt.hlines(correct_dict[chr1].mean(), xmin=0, xmax=len(correct_dict[chr1]), colors="r")
+        plt.hlines(correct_dict[chr1].mean() * 0.2, xmin=0, xmax=len(correct_dict[chr1]), colors="g", linestyles="--")
+        plt.hlines(correct_dict[chr1].mean() * 0.1, xmin=0, xmax=len(correct_dict[chr1]), colors="g")
+        # plt.plot(a.mean(),label="mean")
+        plt.savefig(f"correct_file/{chr1}.jpg")
+        plt.cla()
+    with h5py.File(f"{code}_{iteration}_correct_dict.h5",'w') as correct_file:
+        correct_file["correct_dict"]=pickle.dumps(correct_dict, protocol=0)
     subprocess.run("cat tmp/{0}*.re >{1};rm tmp/*".format("convertemp",
                                                           outputfile), shell=True, check=True, stdout=subprocess.PIPE,
                    stderr=subprocess.PIPE)
     #     convert_contactmat(inputfile,outputfile,Scaffold_dict_list,scaffold_index_dict,fake_chrom_dict)
     return faker_scaffold_len_dict
+
 
 
 def generate_final_agp(Chrom_Dict):
@@ -945,6 +1011,7 @@ def get_convert_info(all_agp):
     fake_chrom_dict = list(pd.Categorical(all_agp.Chromosome).categories)
     Scaffold_dict_list = []
     scaffold_index_dict = {}
+    faker_scaffold_len_dict={}
     for i in range(len(fake_chrom_dict)):
         temp_agp = all_agp[all_agp.Chromosome == fake_chrom_dict[i]]
         for sca in list(temp_agp.Contig_ID):
@@ -953,7 +1020,8 @@ def get_convert_info(all_agp):
         for x in temp_agp.values:
             Scaffold_dict[x[5]] = [int(x[7]), x[8], x[1], x[2]]
         Scaffold_dict_list.append(Scaffold_dict)
-    return fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict
+        faker_scaffold_len_dict[temp_agp.iloc[-1, 0]] = temp_agp.iloc[-1, 2]
+    return fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict
 
 
 ## 通过对agp获得chrom_size
@@ -1197,6 +1265,7 @@ def find_error_connection(path,orientations,index_Scaffold_dict,connections,Chro
                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/pre_contig_edge', data=pre_contig_edge)
                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/contig_edge', data=contig_edge)
 
+
 def get_short_format(orig_contact):
     with open(orig_contact) as inputfile:
         with open("merged_nodups_short_format.txt", 'w') as outfile:
@@ -1383,7 +1452,7 @@ if __name__ == "__main__":
 
     Scaffold_len_Dict = sovle_link(init_contact, contact_file.format(iteration), score, oritention, Scaffold_dict,
                                    Scaffold_len_Dict, iteration, agp_iter_name, init_agp,cutoff,
-                                   Process_num=Process_num,connections=connections)
+                                   Process_num=Process_num,connections=connections,binsize=binsize)
 
     for_output_dict = Scaffold_len_Dict
     iteration += 1
@@ -1400,7 +1469,7 @@ if __name__ == "__main__":
             break
         Scaffold_len_Dict = sovle_link(contact_file.format(iteration - 1), contact_file.format(iteration), score,
                                        oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agp_iter_name,init_agp,
-                                       cutoff, Process_num=Process_num,connections=connections)
+                                       cutoff, Process_num=Process_num,connections=connections,binsize=binsize)
         if len(for_output_dict) >= clusters > len(Scaffold_len_Dict):
             print("Reach the best with {} Iterations".format(iteration - 2))
             iteration -= 1
@@ -1470,7 +1539,7 @@ if __name__ == "__main__":
 
     # In[19]:
 
-    fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict = get_convert_info(all_agp)
+    fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict = get_convert_info(all_agp)
 
     # In[20]:
     # subprocess.run("rm tmp/*", shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1482,11 +1551,32 @@ if __name__ == "__main__":
         convert["Scaffold_dict_list"] = pickle.dumps(Scaffold_dict_list, protocol=0)
         convert["scaffold_index_dict"] = pickle.dumps(scaffold_index_dict, protocol=0)
         convert["fake_chrom_dict"] = pickle.dumps(fake_chrom_dict, protocol=0)
+        convert["faker_scaffold_len_dict"] = pickle.dumps(faker_scaffold_len_dict, protocol=0)
+        convert["binsize"] = binsize
     list_temp_names = []
     for i in range(Process_num):
         list_temp_names.append("tmp/{0}{1:0>3d}".format("convertemp", i))
     with Pool(processes=Process_num) as pool:
         pool.map(convert_contactmat, list_temp_names)
+    correct_dict = {}
+    for correct_dict_file_name in list_temp_names:
+        with h5py.File(f"{correct_dict_file_name}.h5", 'r') as stats:
+            temp_correct = pickle.loads(stats["correct_dict"][()])
+            for chr1 in temp_correct:
+                if chr1 in correct_dict:
+                    correct_dict[chr1] += temp_correct[chr1]
+                else:
+                    correct_dict[chr1] = temp_correct[chr1]
+    for chr1 in correct_dict:
+        plt.plot(correct_dict[chr1].T)
+        plt.hlines(correct_dict[chr1].mean(), xmin=0, xmax=len(correct_dict[chr1]), colors="r")
+        plt.hlines(correct_dict[chr1].mean() * 0.2, xmin=0, xmax=len(correct_dict[chr1]), colors="g", linestyles="--")
+        plt.hlines(correct_dict[chr1].mean() * 0.1, xmin=0, xmax=len(correct_dict[chr1]), colors="g")
+        # plt.plot(a.mean(),label="mean")
+        plt.savefig(f"correct_file/{chr1}.jpg")
+        plt.cla()
+    with h5py.File(f"{code}_final_correct_dict.h5",'w') as correct_file:
+        correct_file["correct_dict"]=pickle.dumps(correct_dict, protocol=0)
     subprocess.run("cat tmp/{0}*.re >{1};rm tmp/*".format("convertemp",
                                                           contact_file.format(iteration)), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
