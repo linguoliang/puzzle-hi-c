@@ -661,6 +661,7 @@ def convert_contactmat(inputfile):
         # convert["faker_scaffold_len_dict"] = pickle.dumps(faker_scaffold_len_dict, protocol=0)
     # add function for correction
     correct_dict={}
+    correct_array={}
     # with h5py.File(f"tmp/{inputfile}.h5",'w') as stats:
     with open(inputfile) as HiCdata:
         tmp_write=[]
@@ -686,14 +687,15 @@ def convert_contactmat(inputfile):
                     chr1=fake_chrom_dict[chr1index]
                     chr2=fake_chrom_dict[chr2index]
                     if chr1==chr2 and faker_scaffold_len_dict[chr1]>1000000 and chr1!=x[1]:
-                        distant=abs(pos2-pos1)
-                        if distant>20000:
+                        distant=pos2-pos1
+                        if abs(distant)>20000:
                             if chr1 in correct_dict:
                                 correct_dict[chr1][pos1 // binsize] += 1
                                 correct_dict[chr1][pos2 // binsize] += 1
-                        else:
-                                correct_dict[chr1]=np.zeros(faker_scaffold_len_dict[chr1]//binsize+1,dtype=np.int32)
-                                correct_dict[chr1][pos1//binsize]+=1
+                            else:
+                                correct_dict[chr1] = np.zeros(faker_scaffold_len_dict[chr1] // binsize + 1,
+                                                              dtype=np.int32)
+                                correct_dict[chr1][pos1 // binsize] += 1
                                 correct_dict[chr1][pos2 // binsize] += 1
                     x[1] = chr1
                     x[5] = chr2
@@ -953,9 +955,10 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
                    stderr=subprocess.PIPE)
     for chr1 in correct_dict:
         plt.plot(correct_dict[chr1].T)
-        plt.hlines(correct_dict[chr1].mean(), xmin=0, xmax=len(correct_dict[chr1]), colors="r")
-        plt.hlines(correct_dict[chr1].mean() * 0.2, xmin=0, xmax=len(correct_dict[chr1]), colors="g", linestyles="--")
-        plt.hlines(correct_dict[chr1].mean() * 0.1, xmin=0, xmax=len(correct_dict[chr1]), colors="g")
+        med=np.median(correct_dict[chr1])
+        plt.hlines(med, xmin=0, xmax=len(correct_dict[chr1]), colors="r")
+        plt.hlines(med * 0.2, xmin=0, xmax=len(correct_dict[chr1]), colors="g", linestyles="--")
+        plt.hlines(med * 0.1, xmin=0, xmax=len(correct_dict[chr1]), colors="g")
         # plt.plot(a.mean(),label="mean")
         plt.savefig(f"correct_file/{chr1}.jpg")
         plt.cla()
@@ -1569,9 +1572,10 @@ if __name__ == "__main__":
                     correct_dict[chr1] = temp_correct[chr1]
     for chr1 in correct_dict:
         plt.plot(correct_dict[chr1].T)
-        plt.hlines(correct_dict[chr1].mean(), xmin=0, xmax=len(correct_dict[chr1]), colors="r")
-        plt.hlines(correct_dict[chr1].mean() * 0.2, xmin=0, xmax=len(correct_dict[chr1]), colors="g", linestyles="--")
-        plt.hlines(correct_dict[chr1].mean() * 0.1, xmin=0, xmax=len(correct_dict[chr1]), colors="g")
+        med=np.median(correct_dict[chr1])
+        plt.hlines(med, xmin=0, xmax=len(correct_dict[chr1]), colors="r")
+        plt.hlines(med * 0.2, xmin=0, xmax=len(correct_dict[chr1]), colors="g", linestyles="--")
+        plt.hlines(med * 0.1, xmin=0, xmax=len(correct_dict[chr1]), colors="g")
         # plt.plot(a.mean(),label="mean")
         plt.savefig(f"correct_file/{chr1}.jpg")
         plt.cla()
