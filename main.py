@@ -416,8 +416,8 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
         "rawtemp", contactdata_filename), shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     print("sort raw data!")
-    subprocess.run("sort -k2,2 -k6,6 --parallel={1} {0}.re >{0}.re.sort".format(
-        contactdata_filename, Process_num), shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}.re >{0}.re.sort".format(
+        contactdata_filename), shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     print("procesing repeat")
     for y in range(len(Contig_ID)):
@@ -541,10 +541,10 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
     for scaffold in Contig_ID:
         target_scaffold_len_dict[scaffold] = Scaffolds_len_dict[scaffold]
     # 获取统计数据
-    with h5py.File("{0}.h5".format(contactdata_filename), "w") as matrix_h5:
-        matrix_h5["dict"]=pickle.dumps(wight_matrix_mat_raw,protocol=0)
-        matrix_h5["ord_scaffold_dict"]=pickle.dumps(ord_scaffold_dict,protocol=0)
-        matrix_h5["wight_matrix"] = pickle.dumps(wight_matrix, protocol=0)
+    # with h5py.File("{0}.h5".format(contactdata_filename), "w") as matrix_h5:
+    #     matrix_h5["dict"]=pickle.dumps(wight_matrix_mat_raw,protocol=0)
+    #     matrix_h5["ord_scaffold_dict"]=pickle.dumps(ord_scaffold_dict,protocol=0)
+    #     matrix_h5["wight_matrix"] = pickle.dumps(wight_matrix, protocol=0)
     # np.savez("{0}.matrix".format(contactdata_filename), wight_matrix)
     return wight_matrix_norm, tri_weight, Contig_ID, target_scaffold_len_dict, False
 
@@ -1385,8 +1385,7 @@ def read_init_maps(filename):
     # build init contactmap
 def create_init_contact_map(init_contact,Scaffolds_len_dict,Process_num,list_temp_names,size_dict_init,binsize):
     init_contact_map_h5 = h5py.File("./init_contact_map.h5", 'w')
-    subprocess.run("sort -k2,2 -k6,6 --parallel={0} {1}>{2}".format(32,
-                                                                    init_contact,
+    subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format(init_contact,
                                                                     init_contact + ".sort"), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2}".format(Process_num,
@@ -1854,8 +1853,7 @@ if __name__ == "__main__":
     #                                                contact_file.format(iteration),
     #                                                contact_file.format(iteration) + ".re"),
     #                shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run("sort -k2,2 -k6,6 --parallel={0} {1}>{2}".format(Process_num,
-                                                                    contact_file.format(iteration) + ".re",
+    subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format(contact_file.format(iteration) + ".re",
                                                                     contact_file.format(iteration) + ".re.sort"),
                    shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     subprocess.run("{0} pre {1} {1}.hic {2}".format(juicer_tools,
