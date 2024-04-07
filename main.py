@@ -35,8 +35,8 @@ parser.add_argument('-t', '--cutoff', default=0.5, type=float, help='Score cutof
 parser.add_argument('-i', '--init_trianglesize', default=6, type=int, help='init_trianglesize.')
 parser.add_argument('-n', '--ncpus', default=1, type=int, help='Number of threads used for computering. Default: 1')
 parser.add_argument("-j","--juicer_tools",required=True,type=str,help="juicer_tools path.")
-parser.add_argument("-e","--error_correction",default=False,type=bool,help="For error correction! Default: False")
-parser.add_argument("-r","--filter_",default=False,type=bool,help="Filter! Default: False")
+parser.add_argument("-e","--error_correction",action="store_true",help="For error correction! Default: False")
+parser.add_argument("-r","--filter_",action="store_true",help="Filter! Default: False")
 
 ## 定义每个连接方式序列对应的头部和尾部contig的方向，0代表头部，1代表尾部,0和1分别代表apg文件中得正向和反向
 head_dict = {0: 1, 1: 0, 2: 1, 3: 0}
