@@ -10,6 +10,9 @@ High-quality, chromosome-scale genomes are essential for genomic analyses. Analy
 * numpy==1.22.3
 * pandas==1.5.1
 * tqdm==4.64.1
+* scipy==1.11.4
+* matplotlib==3.8.0
+
 #### jucier 1.5.6
 
 ### Install required python packages
@@ -45,7 +48,8 @@ optional arguments:
   -j JUICER_TOOLS, --juicer_tools JUICER_TOOLS
                         juicer_tools path.
                         
-eg: python3 main.py -c 10 -p genome -m 
+eg: python3 /public/home/lgl/software/main.py -c 5 -p Arabidopsis -s 10000 -t 0.35 -i 6 -m merged_nodups.txt -f ./ref/Arabidopsis_1M.fasta -j /public/home/lgl/software/juicer/PBS/scripts/juicer_tools -n 35
+
 ```
 
 

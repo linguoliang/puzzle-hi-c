@@ -44,19 +44,22 @@ def caculate_nx(nx_list, contig_len_list):
         index = sum(percent < Nx)
         if index >= contig_num:
             index = contig_num - 1
-        nx_contig.append([Nx, len_array[index]])
+        nx_contig.append([Nx, len_array[index],index+1])
     return nx_contig
 
 
-def print_to_screen(nx_contig):
-    for Nx, contig_len in nx_contig:
-        print(f'N{Nx} is {contig_len}')
+def print_to_screen(nx_contig, nx_length):
+    print(f"# Total size:{sum(nx_length)}\t Total scaffolds: {len(nx_length)}\n")
+    for Nx, contig_len,L in nx_contig:
+        print(f'N{Nx} is {contig_len}, L: {L}')
 
 
-def write_to_disk(nx_contig, fasta_file_name, prefix):
-    with open(f'{fasta_file_name}.{prefix}.txt', 'w') as outfile:
-        for Nx, contig_len in nx_contig:
-            outfile.write(f'N{Nx}\t{contig_len}\n')
+def write_to_disk(nx_contig,nx_length, fasta_file_name, prefix):
+    with open(f'{fasta_file_name}_{prefix}.txt', 'w') as outfile:
+        outfile.write(f"# Total size:{sum(nx_length)}\t Total scaffolds: {len(nx_length)}\n")
+        outfile.write("# Nx\tLength\tL\n")
+        for Nx, contig_len,L in nx_contig:
+            outfile.write(f'N{Nx}\t{contig_len}\t{L}\n')
 
 
 if __name__ == "__main__":
@@ -66,5 +69,5 @@ if __name__ == "__main__":
     nx_list = get_nx_list(args.nx)
     contig_len_list = get_contig_length(fasta_file_name, True)
     nx_contig = caculate_nx(nx_list, contig_len_list)
-    print_to_screen(nx_contig)
-    write_to_disk(nx_contig, fasta_file_name, prefix)
+    print_to_screen(nx_contig,contig_len_list)
+    write_to_disk(nx_contig,contig_len_list, fasta_file_name, prefix)

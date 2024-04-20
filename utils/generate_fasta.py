@@ -47,9 +47,10 @@ if __name__=="__main__":
     # all_agp.to_csv("{}/Puzzle_{}.agp".format(result_path, res), sep='\t', index=False)
     scaffold_dict = get_scaffold_seq(seq_data_path)
     chroms = pd.Categorical(all_agp.Chromosome).categories
-    # chroms=list(Chrom_Dict.keys())
+    chrom_keys=list(chroms)
+    chrom_keys.sort(key=lambda x: int(x[9:]))
     chromlist = []
-    for chrom in chroms:
+    for chrom in chrom_keys:
         tmpagp = all_agp[all_agp.Chromosome == chrom]
         chromlist.append(GenerateChrom(tmpagp, scaffold_dict, chrom))
     SeqIO.write(chromlist, "{}.fa".format(res), "fasta")
