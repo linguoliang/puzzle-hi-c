@@ -4,6 +4,7 @@ High-quality, chromosome-scale genomes are essential for genomic analyses. Analy
 
 ## Installation
 #### python 3.9.0
+* python==3.7.8
 * biopython==1.78 
 * h5py==3.7.0 
 * networkx==2.8.4
