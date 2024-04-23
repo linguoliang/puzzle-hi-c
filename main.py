@@ -18,7 +18,7 @@ import networkx as nx
 import numpy as np
 # In[1]:
 import pandas as pd
-import tqdm
+# import tqdm
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import utils.convert_data as converscript
@@ -68,7 +68,7 @@ def split_contactmat(inputfile, outputfile, agpfile):
                 split_dict[item[5]] = [[int(item[6]), int(item[7])]]
     with open(inputfile) as HiCdata:
         with open(outputfile, 'w') as Record:
-            for x in tqdm.tqdm(HiCdata):
+            for x in HiCdata:
                 x = x.strip()
                 x = x.split("\t")
                 if (x[1] in scaffold_index_dict) and (x[5] in scaffold_index_dict):

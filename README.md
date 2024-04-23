@@ -4,15 +4,13 @@ High-quality, chromosome-scale genomes are essential for genomic analyses. Analy
 
 ## Installation
 #### python 3.9.0
-* python==3.7.8
-* biopython==1.78 
-* h5py==3.7.0 
-* networkx==2.8.4
-* numpy==1.22.3
-* pandas==1.5.1
-* tqdm==4.64.1
-* scipy==1.11.4
-* matplotlib==3.8.0
+* biopython==1.81
+* h5py==3.11.0
+* networkx==3.2.1
+* numpy==1.24.4
+* pandas==2.2.2
+* scipy==1.13.0
+* matplotlib==3.8.2
 
 #### jucier 1.5.6
 
