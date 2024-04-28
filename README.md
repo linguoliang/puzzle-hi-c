@@ -82,7 +82,7 @@ ln -s ../../raw_data/CRR302669_r2.fastq.gz CRR302669_R2.fastq.gz
 # Run Juicer
 cd ..
 ${Juicer}/CPU/juicer.sh \
-        -t 34 \
+        -t 8 \
         -y ../ref/Arabidopsis_1M_DpnII.txt \
         -p ../ref/Arabidopsis_1M.chrom.sizes \
         -z ../ref/Arabidopsis_1M.fasta
@@ -91,7 +91,12 @@ cd ..
 mkdir Puzzle_hic_1M
 cd Puzzle_hic_1M
 ln -s ../juicer_1M/aligned/merged_nodups.txt ./
-python3 ${PuzzleHiC}/main.py -c 5 -p Arabidopsis -s 10000 -t 0.35 -i 6 -m merged_nodups.txt -f ./ref/Arabidopsis_1M.fasta -j {Juicer}/PBS/scripts/juicer_tools -n 34
+python3 ${PuzzleHiC}/main.py \
+        -c 5 -p Arabidopsis -s 10000 \
+        -t 0.35 -i 6 -m merged_nodups.txt \
+        -f ./ref/Arabidopsis_1M.fasta \
+        -j {Juicer}/PBS/scripts/juicer_tools \
+        -n 8
 ```
 
 
