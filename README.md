@@ -24,31 +24,35 @@ pip install -r requirements.txt
 
 ## Usage
 ```bash
-usage: main.py [-h] -c CLUSTERS [-p PREFIX] [-s BINSIZE] -m MATRIX -f FASTA
-               [-t CUTOFF] [-i INIT_TRIANGLESIZE] [-n NCPUS] -j JUICER_TOOLS
+usage: main.py [-h] -c CLUSTERS -m MATRIX -j JUICER_TOOLS -f FASTA [-p PREFIX] [-s BINSIZE] [-t CUTOFF] [-i INIT_TRIANGLESIZE]
+               [-n NCPUS] [-e] [-g GAP]
 
 optional arguments:
   -h, --help            show this help message and exit
   -c CLUSTERS, --clusters CLUSTERS
                         Chromosomes number.
-  -p PREFIX, --prefix PREFIX
-                        Prefix
-  -s BINSIZE, --binsize BINSIZE
-                        The bin size. 
   -m MATRIX, --matrix MATRIX
                         The matrix file path.eg: merge_nodup.txt
-  -f FASTA, --fasta FASTA
-                        Scaffold fasta file.
-  -t CUTOFF, --cutoff CUTOFF
-                        Score cutoff.
-  -i INIT_TRIANGLESIZE, --init_trianglesize INIT_TRIANGLESIZE
-                        init_trianglesize.
-  -n NCPUS, --ncpus NCPUS
-                        Number of threads used for computering.
   -j JUICER_TOOLS, --juicer_tools JUICER_TOOLS
                         juicer_tools path.
+  -f FASTA, --fasta FASTA
+                        Scaffold fasta file.
+  -p PREFIX, --prefix PREFIX
+                        Output prefix! Default: sample.
+  -s BINSIZE, --binsize BINSIZE
+                        The bin size. Default: 10000.
+  -t CUTOFF, --cutoff CUTOFF
+                        Score cutoff, 0.25-0.5 recommended. default: 0.3.
+  -i INIT_TRIANGLESIZE, --init_trianglesize INIT_TRIANGLESIZE
+                        Initial triangle size. Default: 3.
+  -n NCPUS, --ncpus NCPUS
+                        Number of threads. Default: 1.
+  -e, --error_correction
+                        For error correction! Default: False.
+  -g GAP, --gap GAP     The size of gap between scaffolds. Default: 100.
+
                         
-eg: python3 /public/home/lgl/software/main.py -c 5 -p Arabidopsis -s 10000 -t 0.35 -i 6 -m merged_nodups.txt -f ./ref/Arabidopsis_1M.fasta -j /public/home/lgl/software/juicer/PBS/scripts/juicer_tools -n 35
+eg: python3 /public/home/lgl/software/puzzle-hic/main.py -c 5 -p Arabidopsis -s 10000 -t 0.35 -i 6 -m merged_nodups.txt -f ./ref/Arabidopsis_1M.fasta -j /public/home/lgl/software/juicer/PBS/scripts/juicer_tools -n 35
 
 ```
 
