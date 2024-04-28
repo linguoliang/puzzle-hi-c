@@ -18,11 +18,11 @@ def GenerateChrom(agp,Contigs_dict,Chr_name="Chr02"):
                     Chr.seq+=Contigs_dict[item[5]].seq
                 else:
                     Chr.seq+=Contigs_dict[item[5]].seq.reverse_complement()
-                Chr.seq+=Seq("N"*100)
+                # Chr.seq+=Seq("N"*gap)
             else:
                 print("Agp contains unkown contig {}!".format(item[5]))
         else:
-            Chr.seq+=Seq("N"*item[-2])
+            Chr.seq+=Seq("N"*int(item[-4]))
     return Chr
 def get_scaffold_seq(filename):
     scaffold_dict={}
@@ -36,6 +36,19 @@ def get_scaffold_seq(filename):
             scaffold_dict[seq.name]=seq
     return scaffold_dict
 
+def main(Path,seq_data_path,res):
+    all_agp = pd.read_csv(Path, sep='\t', index_col=0)
+    # all_agp.to_csv("{}/Puzzle_{}.agp".format(result_path, res), sep='\t', index=False)
+    scaffold_dict = get_scaffold_seq(seq_data_path)
+    chroms = pd.Categorical(all_agp.Chromosome).categories
+    chrom_keys = list(chroms)
+    chrom_keys.sort(key=lambda x: int(x[9:]))
+    chromlist = []
+    for chrom in chrom_keys:
+        tmpagp = all_agp[all_agp.Chromosome == chrom]
+        chromlist.append(GenerateChrom(tmpagp, scaffold_dict, chrom))
+    SeqIO.write(chromlist, "{}.fa".format(res), "fasta")
+
 if __name__=="__main__":
     Path = sys.argv[1]
     seq_data_path = sys.argv[2]
@@ -43,14 +56,4 @@ if __name__=="__main__":
         res=sys.argv[3]
     else:
         res="puzzle_hic"
-    all_agp = pd.read_csv(Path, sep='\t', index_col=0)
-    # all_agp.to_csv("{}/Puzzle_{}.agp".format(result_path, res), sep='\t', index=False)
-    scaffold_dict = get_scaffold_seq(seq_data_path)
-    chroms = pd.Categorical(all_agp.Chromosome).categories
-    chrom_keys=list(chroms)
-    chrom_keys.sort(key=lambda x: int(x[9:]))
-    chromlist = []
-    for chrom in chrom_keys:
-        tmpagp = all_agp[all_agp.Chromosome == chrom]
-        chromlist.append(GenerateChrom(tmpagp, scaffold_dict, chrom))
-    SeqIO.write(chromlist, "{}.fa".format(res), "fasta")
+    main(Path,seq_data_path,res)

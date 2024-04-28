@@ -12,7 +12,8 @@ High-quality, chromosome-scale genomes are essential for genomic analyses. Analy
 * scipy==1.13.0
 * matplotlib==3.8.2
 
-#### jucier 1.5.6
+#### Juicer 1.5.6
+Installation of Juicer please refer to [Juicer](https://github.com/aidenlab/juicer)
 
 ### Install required python packages
 ```bash
@@ -33,7 +34,7 @@ optional arguments:
   -p PREFIX, --prefix PREFIX
                         Prefix
   -s BINSIZE, --binsize BINSIZE
-                        The bin size.
+                        The bin size. 
   -m MATRIX, --matrix MATRIX
                         The matrix file path.eg: merge_nodup.txt
   -f FASTA, --fasta FASTA
@@ -51,6 +52,14 @@ eg: python3 /public/home/lgl/software/main.py -c 5 -p Arabidopsis -s 10000 -t 0.
 
 ```
 
+## Quick Start
+1. Use Juicer to generate ```merged_nodups.txt```. Please refer to [Juicer](https://github.com/aidenlab/juicer).
+2. Run puzzle Hi-C script.
+
+## Example
+```shell
+
+```
 
 
 

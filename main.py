@@ -22,21 +22,22 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import utils.convert_data as converscript
-
+import utils.generate_fasta as gf
 # import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--clusters', required=True, type=int, help='Chromosomes number.')
-parser.add_argument("-p", '--prefix', default="sample", type=str, help='Prefix')
-parser.add_argument('-s', '--binsize', default=10000, type=int, help='The bin size.')
 parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path.eg: merge_nodup.txt')
-parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file.')
-parser.add_argument('-t', '--cutoff', default=0.3, type=float, help='Score cutoff, 0.25-0.5 recommended. default: 0.3')
-parser.add_argument('-i', '--init_trianglesize', default=3, type=int, help='init triangle size.')
-parser.add_argument('-n', '--ncpus', default=1, type=int, help='Number of threads used for computering. Default: 1')
 parser.add_argument("-j", "--juicer_tools",required=True,type=str,help="juicer_tools path.")
-parser.add_argument("-e", "--error_correction",action="store_true",help="For error correction! Default: False")
-parser.add_argument("-r", "--filter",action="store_true",help="Filter! Default: False")
+parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file.')
+parser.add_argument("-p", '--prefix', default="sample", type=str, help='Output prefix! Default: sample.')
+parser.add_argument('-s', '--binsize', default=10000, type=int, help='The bin size. Default: 10000.')
+parser.add_argument('-t', '--cutoff', default=0.3, type=float, help='Score cutoff, 0.25-0.5 recommended. default: 0.3.')
+parser.add_argument('-i', '--init_trianglesize', default=3, type=int, help='Initial triangle size. Default: 3.')
+parser.add_argument('-n', '--ncpus', default=1, type=int, help='Number of threads. Default: 1.')
+parser.add_argument("-e", "--error_correction",action="store_true",help="For error correction! Default: False.")
+parser.add_argument("-g", "--gap",default=100, type=int,help="The size of gap between scaffolds. Default: 100.")
+# parser.add_argument("-r", "--filter",action="store_true",help="Filter! Default: False")
 
 ## 定义每个连接方式序列对应的头部和尾部contig的方向，0代表头部，1代表尾部,0和1分别代表apg文件中得正向和反向
 head_dict = {0: 1, 1: 0, 2: 1, 3: 0}
@@ -915,7 +916,7 @@ def find_break_point(sig):
         near_break_point=[]
     return near_break_point
 
-def generate_scaffold_info(agp_list):
+def generate_scaffold_info(agp_list,gap=100):
     faker_scaffold_len_dict = {}
     scaffold_index_dict = {}
     fake_chrom_dict = []
@@ -926,7 +927,7 @@ def generate_scaffold_info(agp_list):
         fake_chrom_dict.append(agp_list[i].iloc[0, 0])
         for j in range(1, len(agp_list[i])):
             scaffold_index_dict[agp_list[i].iloc[j, 5]] = i
-            agp_list[i].iloc[j, 1] = int(agp_list[i].iloc[j - 1, 2]) + 1 + 100
+            agp_list[i].iloc[j, 1] = int(agp_list[i].iloc[j - 1, 2]) + 1 + gap
             agp_list[i].iloc[j, 2] = int(agp_list[i].iloc[j, 1]) + int(agp_list[i].iloc[j, 7]) - 1
         faker_scaffold_len_dict[agp_list[i].iloc[-1, 0]] = agp_list[i].iloc[-1, 2]
     ## 构建转换矩阵
@@ -1017,7 +1018,7 @@ def survey_contig(list_temp_names,Process_num):
     return correct_dict
 
 def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agpfilename,init_agp,
-               cutoff, Process_num=10,connections=None,binsize=10000,error_correction=False):
+               cutoff, Process_num=10,connections=None,binsize=10000,error_correction=False,gap=100):
     index_Scaffold_dict = {}
     for key in range(len(Scaffold_dict)):
         index_Scaffold_dict[key] = Scaffold_dict[key]
@@ -1124,7 +1125,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
                                    iteration)
             agp_list.append(tempagp)
     faker_scaffold_len_dict, scaffold_index_dict, fake_chrom_dict, Scaffold_dict_list, interation_agp = generate_scaffold_info(
-        agp_list)
+        agp_list,gap)
     ###生成正确的chrom
     # faker_scaffold_len_dict = {}
     # scaffold_index_dict = {}
@@ -1222,7 +1223,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
             # plt.plot(a.mean(),label="mean")
 
         faker_scaffold_len_dict, scaffold_index_dict, fake_chrom_dict, Scaffold_dict_list, interation_agp = generate_scaffold_info(
-            tmp_agp_list)
+            tmp_agp_list,gap)
         interation_agp.to_csv(agpfilename.format(iteration), sep="\t", index=False)
         with h5py.File("tmp/convert.h5", "w") as convert:
             convert["Scaffold_dict_list"] = pickle.dumps(Scaffold_dict_list, protocol=0)
@@ -1242,7 +1243,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     return faker_scaffold_len_dict
 
 
-def generate_final_agp(Chrom_Dict):
+def generate_final_agp(Chrom_Dict,gap):
     all_agp = pd.DataFrame(data=[], columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
                                              "Contig_end", "Orientation"])
     agp_list=[]
@@ -1269,9 +1270,19 @@ def generate_final_agp(Chrom_Dict):
         #         fake_chrom_dict.append(agp_list[i].iloc[0,0])
         for j in range(1, len(tempagp)):
             #             scaffold_index_dict[agp_list[i].iloc[j,5]]=i
-            tempagp.iloc[j, 1] = int(tempagp.iloc[j - 1, 2]) + 1 + 100
+            tempagp.iloc[j, 1] = int(tempagp.iloc[j - 1, 2]) + 1 + gap
             tempagp.iloc[j, 2] = int(tempagp.iloc[j, 1]) + int(tempagp.iloc[j, 7]) - 1
-        agp_list.append([chrom,tempagp.iloc[-1, 2],tempagp])
+        tempagpwithgap=[]
+        for j in range(len(tempagp)-1):
+            tempagp.iloc[j, 3]=2*j
+            tempagpwithgap.append(list(tempagp.iloc[j, :]))
+            gap = [chrom, tempagp.iloc[j, 2]+1, tempagp.iloc[j+1, 1]-1, 2*j+1, "U", 200, "scaffold", "yes", "proximity_ligation"]
+            tempagpwithgap.append(gap)
+        tempagp.iloc[-1, 3] = 2 * len(tempagp)
+        tempagpwithgap.append(list(tempagp.iloc[-1, :]))
+        pd_tempagpwithgap = pd.DataFrame(data=tempagpwithgap,columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
+                                        "Contig_end", "Orientation"])
+        agp_list.append([chrom,pd_tempagpwithgap.iloc[-1, 2],pd_tempagpwithgap])
         # all_agp = all_agp.append(tempagp)
     agp_list.sort(key=lambda i:i[1],reverse=True)
     for i in range(len(agp_list)):
@@ -1287,6 +1298,7 @@ def get_convert_info(all_agp):
     faker_scaffold_len_dict={}
     for i in range(len(fake_chrom_dict)):
         temp_agp = all_agp[all_agp.Chromosome == fake_chrom_dict[i]]
+        temp_agp=temp_agp[temp_agp.Tag == "W"]
         for sca in list(temp_agp.Contig_ID):
             scaffold_index_dict[sca] = i
         Scaffold_dict = {}
@@ -1573,6 +1585,7 @@ if __name__ == "__main__":
     growth_rate = 1.4
     trianglesize = init_trianglesize
     binsize = args.binsize
+    gap=args.gap
     # check_windows = 200000
     Process_num = args.ncpus
     cid = os.getpid()
@@ -1725,7 +1738,7 @@ if __name__ == "__main__":
 
     Scaffold_len_Dict = sovle_link(init_contact, contact_file.format(iteration), score, oritention, Scaffold_dict,
                                    Scaffold_len_Dict, iteration, agp_iter_name, init_agp,cutoff,
-                                   Process_num=Process_num,connections=connections,binsize=binsize,error_correction=error_correction)
+                                   Process_num=Process_num,connections=connections,binsize=binsize,error_correction=error_correction,gap=gap)
 
     for_output_dict = Scaffold_len_Dict
     iteration += 1
@@ -1742,7 +1755,7 @@ if __name__ == "__main__":
             break
         Scaffold_len_Dict = sovle_link(contact_file.format(iteration - 1), contact_file.format(iteration), score,
                                        oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agp_iter_name,init_agp,
-                                       cutoff, Process_num=Process_num,connections=connections,binsize=binsize,error_correction=error_correction)
+                                       cutoff, Process_num=Process_num,connections=connections,binsize=binsize,error_correction=error_correction,gap=gap)
         if len(for_output_dict) >= clusters > len(Scaffold_len_Dict):
             print("Reach the best with {} Iterations".format(iteration - 2))
             iteration -= 1
@@ -1808,7 +1821,9 @@ if __name__ == "__main__":
                 Chrom_Dict[k]["Scaffold"] = list(temp_agp.Contig_ID)
                 Chrom_Dict[k]["Oritention"] = list(temp_agp.Orientation)
                 Chrom_Dict[k]["Scaffold_len"] = list(temp_agp.Contig_end)
-        all_agp = generate_final_agp(Chrom_Dict)
+        all_agp = generate_final_agp(Chrom_Dict,gap)
+        all_agp.to_csv("./{}.agp".format(code), sep='\t')
+        gf.main("./{}.agp".format(code),fastafile_name,code)
 
     # In[19]:
 
@@ -1837,7 +1852,7 @@ if __name__ == "__main__":
                                                           contact_file.format(iteration)), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    all_agp.to_csv("./{}.agp".format(code), sep='\t')
+
 
     # In[27]:
     chrom_size_dict = get_chrom_size_from_agp(all_agp)
