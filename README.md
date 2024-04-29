@@ -98,7 +98,7 @@ ln -s ../juicer_1M/aligned/merged_nodups.txt ./
 python3 ${PuzzleHiC}/main.py \
         -c 5 -p Arabidopsis -s 10000 \
         -t 0.35 -i 6 -m merged_nodups.txt \
-        -f ./ref/Arabidopsis_1M.fasta \
+        -f ../ref/Arabidopsis_1M.fasta \
         -j {Juicer}/PBS/scripts/juicer_tools \
         -n 8
 ```
