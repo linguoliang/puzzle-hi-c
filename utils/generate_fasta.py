@@ -37,7 +37,7 @@ def get_scaffold_seq(filename):
     return scaffold_dict
 
 def main(Path,seq_data_path,res):
-    all_agp = pd.read_csv(Path, sep='\t', index_col=0)
+    all_agp = pd.read_csv(Path, sep='\t')
     # all_agp.to_csv("{}/Puzzle_{}.agp".format(result_path, res), sep='\t', index=False)
     scaffold_dict = get_scaffold_seq(seq_data_path)
     chroms = pd.Categorical(all_agp.Chromosome).categories
