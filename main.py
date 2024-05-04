@@ -943,7 +943,7 @@ def generate_scaffold_info(agp_list,gap=100):
                                            "Contig_start",
                                            "Contig_end", "Orientation"])
     for tempagp in agp_list:
-        interation_agp = interation_agp.append(tempagp)
+        interation_agp = pd.concat([interation_agp,tempagp])   # Add support for pandas2
     return faker_scaffold_len_dict,scaffold_index_dict,fake_chrom_dict,Scaffold_dict_list,interation_agp
 
 def split_agp(agpfile,arr):
@@ -1287,7 +1287,7 @@ def generate_final_agp(Chrom_Dict,gap):
     agp_list.sort(key=lambda i:i[1],reverse=True)
     for i in range(len(agp_list)):
         agp_list[i][2].iloc[:,0]=f"scaffold_{i+1}"
-        all_agp=all_agp.append(agp_list[i][2])
+        all_agp = pd.concat([all_agp,agp_list[i][2]]) # for pandas2
     return all_agp
 
 
