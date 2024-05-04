@@ -17,7 +17,7 @@ Installation of Juicer please refer to [Juicer](https://github.com/aidenlab/juic
 
 ### Install required python packages
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt 
 ```
 
 
