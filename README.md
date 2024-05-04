@@ -104,5 +104,5 @@ python3 ${PuzzleHiC}/main.py \
 ```
 ## To do list
 
-
+* Generate  ```.assembly``` file for Juicebox Assembly Tools (JBAT)
 
