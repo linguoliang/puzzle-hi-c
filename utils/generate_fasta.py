@@ -14,7 +14,7 @@ def GenerateChrom(agp,Contigs_dict,Chr_name="Chr02"):
             if item[5] in Contigs_dict:
                 if len(Contigs_dict[item[5]])!=int(item[-2]):
                     print("error!{} {}".format(Chr_name,Contigs_dict[item[5]].name))
-                if int(item[-1])==0:
+                if item[-1]=="+":
                     Chr.seq+=Contigs_dict[item[5]].seq
                 else:
                     Chr.seq+=Contigs_dict[item[5]].seq.reverse_complement()

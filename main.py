@@ -1249,6 +1249,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
 
 
 def generate_final_agp(Chrom_Dict,gap):
+    Orientation2sign={0:"+",1:"-"}
     all_agp = pd.DataFrame(data=[], columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
                                              "Contig_end", "Orientation"])
     agp_list=[]
@@ -1264,7 +1265,7 @@ def generate_final_agp(Chrom_Dict,gap):
             Contig_start = Start
             Contig_end = End
             Orientation = Chrom_Dict[chrom]["Oritention"][i]
-            temp_data = [Chromosome, Start, End, Order, Tag, Contig_ID, Contig_start, Contig_end, Orientation]
+            temp_data = [Chromosome, Start, End, Order, Tag, Contig_ID, Contig_start, Contig_end, Orientation2sign[Orientation]]
             temp_list.append(temp_data)
         tempagp = pd.DataFrame(data=temp_list,
                                columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
