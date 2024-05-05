@@ -1014,8 +1014,8 @@ def survey_contig(list_temp_names,Process_num,debug=False):
             plt.plot(sig)
             plt.savefig(f"correct_file/{tpc}_log.jpg")
             plt.cla()
-    with h5py.File(f"{code}_{iteration}_correct_dict.h5", 'w') as correct_file:
-        correct_file["correct_dict"] = pickle.dumps(correct_dict, protocol=0)
+        with h5py.File(f"{code}_{iteration}_correct_dict.h5", 'w') as correct_file:
+            correct_file["correct_dict"] = pickle.dumps(correct_dict, protocol=0)
     return correct_dict
 
 def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agpfilename, init_agp,
@@ -1876,8 +1876,8 @@ if __name__ == "__main__":
     subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format("{}.txt".format(code)+ ".re",
                                                                     "{}.txt".format(code) + ".re.sort"),
                    shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run("{0} pre {1} {1}.hic {2}".format(juicer_tools,
-                                                    "{}.txt".format(code) + ".re.sort",
+    subprocess.run("{0} pre {1} {2}.hic {3}".format(juicer_tools,
+                                                    "{}.txt".format(code) + ".re.sort",code,
                                                     "{}.Chrom.sizes".format(code)), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     subprocess.run("rm {0}".format("{}.txt".format(code)), shell=True, check=True,
