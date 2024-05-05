@@ -1281,7 +1281,7 @@ def generate_final_agp(Chrom_Dict,gap):
         for j in range(len(tempagp)-1):
             tempagp.iloc[j, 3]=2*j+1
             tempagpwithgap.append(list(tempagp.iloc[j, :]))
-            gap_item = [chrom, tempagp.iloc[j, 2]+1, tempagp.iloc[j+1, 1]-1, 2*(j+1), "U", 200, "scaffold", "yes", "proximity_ligation"]
+            gap_item = [chrom, tempagp.iloc[j, 2]+1, tempagp.iloc[j+1, 1]-1, 2*(j+1), "U", gap, "scaffold", "yes", "proximity_ligation"]
             tempagpwithgap.append(gap_item)
         tempagp.iloc[-1, 3] = 2 * len(tempagp)-1
         tempagpwithgap.append(list(tempagp.iloc[-1, :]))

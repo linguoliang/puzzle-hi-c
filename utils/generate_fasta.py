@@ -12,9 +12,9 @@ def GenerateChrom(agp,Contigs_dict,Chr_name="Chr02"):
         # 判断Tag W 为序列 U为 N
         if item[4]=="W":
             if item[5] in Contigs_dict:
-                if len(Contigs_dict[item[5]])!=item[-2]:
+                if len(Contigs_dict[item[5]])!=int(item[-2]):
                     print("error!{} {}".format(Chr_name,Contigs_dict[item[5]].name))
-                if item[-1]==0:
+                if int(item[-1])==0:
                     Chr.seq+=Contigs_dict[item[5]].seq
                 else:
                     Chr.seq+=Contigs_dict[item[5]].seq.reverse_complement()
