@@ -336,16 +336,16 @@ def get_links(filename):
 
                 lum = repeat_offset_dict[x]["start"].reshape((maxlength, 1)).dot(
                     repeat_offset_dict[y]["start"].reshape((1, maxlength)))
-                lums = lum.sum() + 1
+                # lums = lum.sum() + 1
                 ldm = repeat_offset_dict[x]["end"].reshape((maxlength, 1)).dot(
                     repeat_offset_dict[y]["start"].reshape((1, maxlength)))
-                ldms = ldm.sum() + 1
+                # ldms = ldm.sum() + 1
                 rum = repeat_offset_dict[x]["start"].reshape((maxlength, 1)).dot(
                     repeat_offset_dict[y]["end"].reshape((1, maxlength)))
-                rums = rum.sum() + 1
+                # rums = rum.sum() + 1
                 rdm = repeat_offset_dict[x]["end"].reshape((maxlength, 1)).dot(
                     repeat_offset_dict[y]["end"].reshape((1, maxlength)))
-                rdms = rdm.sum() + 1
+                # rdms = rdm.sum() + 1
 
                 lu = matrix_dict["left_up"] * lunw * lum
                 ld = matrix_dict["left_down"] * ldnw * ldm
@@ -405,7 +405,7 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
     ## 实现多线程
     with h5py.File("tmp/{}.h5".format("rawtemp"), "w") as rawdata:
         rawdata["ord_scaffold_dict"] = pickle.dumps(ord_scaffold_dict, protocol=0)
-    subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2}".format(Process_num,
+    subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2};".format(Process_num,
                                                                contactdata_filename, "rawtemp"), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     list_temp_names = []
@@ -420,7 +420,7 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
     subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}.re >{0}.re.sort".format(
         contactdata_filename), shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    print("procesing repeat")
+    print("processing repeat")
     for y in range(len(Contig_ID)):
         a = Contig_ID[y]
         # a_len = Scaffolds_len_dict[a]
@@ -429,7 +429,7 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
         repeat_dict[a] = {"start": np.zeros(a_bin), "end": np.zeros(a_bin)}
         repeat_offset_dict[a] = {"start": trianglesize, "end": trianglesize}
         norm_weight[a] = {"start": trianglesize, "end": trianglesize}
-    print("procesing repeat files")
+    print("processing repeat files")
     ### 并行化读取
     with h5py.File("tmp/repeat_dict.h5", "w") as repeat_h5:
         repeat_h5["repeat_dict"] = pickle.dumps(repeat_dict, protocol=0)
@@ -447,7 +447,7 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
             repeat_dict[x]["end"] += repeat_dict_temp[x]["end"]
     subprocess.run("rm tmp/{0}*;rm {1}.re".format(
         "rawtemp", contactdata_filename), shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print("procesing repeat flags")
+    print("processing repeat flags")
     for x in repeat_dict:
         for y in repeat_dict[x]:
             #             mean=repeat_dict[x][y].mean()
@@ -464,7 +464,7 @@ def count_links(contactdata_filename, Scaffolds_len_dict, trianglesize, clusters
             # flag2 = repeat_dict[x][y] <= average_links * 2
             repeat_offset_dict[x][y] = flag
 
-    print("procesing links")
+    print("processing links")
     #     print(repeat_offset_dict[x][y])
     ###splitfile
     subprocess.run("split -a 3 -n l/{0} -d {1}.re.sort tmp/{2}".format(Process_num,
@@ -992,7 +992,7 @@ def find_closest_value(arr, target):
         #     midv=mid
     return midv
 
-def survey_contig(list_temp_names,Process_num):
+def survey_contig(list_temp_names,Process_num,debug=False):
     with Pool(processes=Process_num) as pool:
         pool.map(survey_contactmat, list_temp_names)
     # for correction purpose
@@ -1006,19 +1006,20 @@ def survey_contig(list_temp_names,Process_num):
                     correct_dict[chr1] += temp_correct[chr1]
                 else:
                     correct_dict[chr1] = temp_correct[chr1]
-    subprocess.run("mkdir -p correct_file", shell=True, check=True, stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
-    for tpc in correct_dict:
-        sig = np.log10((correct_dict[tpc][0].T + 1) / (correct_dict[tpc][1].T + 1))
-        plt.plot(sig)
-        plt.savefig(f"correct_file/{tpc}_log.jpg")
-        plt.cla()
+    if debug:
+        subprocess.run("mkdir -p correct_file", shell=True, check=True, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
+        for tpc in correct_dict:
+            sig = np.log10((correct_dict[tpc][0].T + 1) / (correct_dict[tpc][1].T + 1))
+            plt.plot(sig)
+            plt.savefig(f"correct_file/{tpc}_log.jpg")
+            plt.cla()
     with h5py.File(f"{code}_{iteration}_correct_dict.h5", 'w') as correct_file:
         correct_file["correct_dict"] = pickle.dumps(correct_dict, protocol=0)
     return correct_dict
 
-def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agpfilename,init_agp,
-               cutoff, Process_num=10,connections=None,binsize=10000,error_correction=False,gap=100):
+def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agpfilename, init_agp,
+               cutoff, Process_num=10, binsize=10000, error_correction=False, gap=100):
     index_Scaffold_dict = {}
     for key in range(len(Scaffold_dict)):
         index_Scaffold_dict[key] = Scaffold_dict[key]
@@ -1057,37 +1058,38 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     final_path = []
     print(f'iteration:{iteration}')
     # connections,Chrom_Dict_for_error_corection=get_all_conections(iteration,agp_iter_name,init_agp,connections,conection_dict)
-    try:
-        all_stath5py=h5py.File(f'{inputfile}_all_stat.h5', "w-")
-    except FileExistsError:
-        print("File already Exist")
-    else:
-        all_stath5py.close()
+    # try:
+    #     all_stath5py=h5py.File(f'{inputfile}_all_stat.h5', "w-")
+    # except FileExistsError:
+    #     print("File already Exist")
+    # else:
+    #     all_stath5py.close()
     # with h5py.File("init_contact_map.h5",'r') as h5file:
-    with h5py.File(f'{inputfile}_all_stat.h5',"r+") as h5write:
-        for path_list in allpaths:
-            # find_error_connection(path_list,oritention,index_Scaffold_dict,connections,Chrom_Dict_for_error_corection,h5file,h5write)
-            temp_error = []
-            flag_pass = False
-            if len(path_list) >= 3:
-                for i in range(1, len(path_list) - 1):
-                    if flag_pass:
-                        flag_pass = False
-                        continue
-                    if ((int(oritention[path_list[i], path_list[i - 1]]) ^ int(
-                            oritention[path_list[i], path_list[i + 1]])) & 1) == 0:
-                        temp_error.append(i)
-                        flag_pass = True
-                path_list_len = len(path_list)
-                temp_error.append(path_list_len)
-                temp_start = 0
-                for index_path_list in temp_error:
-                    final_path.append(path_list[temp_start:index_path_list])
-                    if index_path_list != path_list_len:
-                        final_path.append([path_list[index_path_list]])
-                    temp_start = index_path_list + 1
-            else:
-                final_path.append(path_list)
+    # with h5py.File(f'{inputfile}_all_stat.h5',"r+") as h5write:
+    for path_list in allpaths:
+        # find_error_connection(path_list,oritention,index_Scaffold_dict,connections,Chrom_Dict_for_error_corection,h5file,h5write)
+        temp_error = []
+        flag_pass = False
+        if len(path_list) >= 3:
+            for i in range(1, len(path_list) - 1):
+                if flag_pass:
+                    flag_pass = False
+                    continue
+                if ((int(oritention[path_list[i], path_list[i - 1]]) ^ int(
+                        oritention[path_list[i], path_list[i + 1]])) & 1) == 0:
+                    temp_error.append(i)
+                    flag_pass = True
+            path_list_len = len(path_list)
+            temp_error.append(path_list_len)
+            temp_start = 0
+            for index_path_list in temp_error:
+                final_path.append(path_list[temp_start:index_path_list])
+                if index_path_list != path_list_len:
+                    final_path.append([path_list[index_path_list]])
+                temp_start = index_path_list + 1
+        else:
+            final_path.append(path_list)
+
     #     final_path
     ## 将每条path的scaffold 顺序定下来
     """
@@ -1154,9 +1156,12 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     # for tempagp in agp_list:
     #     interation_agp = interation_agp.append(tempagp)
     interation_agp.to_csv(agpfilename.format(iteration), sep="\t", index=False)
-    subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2}".format(Process_num,
+    subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2};".format(Process_num,
                                                                inputfile, "convertemp"), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if iteration>0:
+        subprocess.run("rm {0}".format(inputfile), shell=True, check=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     with h5py.File("tmp/convert.h5", "w") as convert:
         convert["Scaffold_dict_list"] = pickle.dumps(Scaffold_dict_list, protocol=0)
         convert["scaffold_index_dict"] = pickle.dumps(scaffold_index_dict, protocol=0)
@@ -1167,7 +1172,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     for i in range(Process_num):
         list_temp_names.append("tmp/{0}{1:0>3d}".format("convertemp", i))
 
-    correct_dict=survey_contig(list_temp_names, Process_num)
+
     # with Pool(processes=Process_num) as pool:
     #     pool.map(survey_contactmat, list_temp_names)
     # # for correction purpose
@@ -1191,13 +1196,13 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     # with h5py.File(f"{code}_{iteration}_correct_dict.h5", 'w') as correct_file:
     #     correct_file["correct_dict"] = pickle.dumps(correct_dict, protocol=0)
     if error_correction:    # break agp file
+        correct_dict = survey_contig(list_temp_names, Process_num)
         tmp_agp_list=[]
         chroms = list(pd.Categorical(interation_agp.Chromosome).categories)
         for chr1 in chroms:
             if chr1 in correct_dict:
                 sig=np.log10((correct_dict[chr1][0].T+1)/(correct_dict[chr1][1].T+1))
                 near_break_point=find_break_point(sig)
-
             else:
                 near_break_point=[]
             tempagp = interation_agp[interation_agp.Chromosome == chr1]
@@ -1493,61 +1498,61 @@ def get_all_conections(iteration,agp_iter_name,init_agp,connections,conection_di
 #         contig_oritention =1- connections[scaffold_name]["Oritention"][0]
 #     return contig,contig_oritention
 
-def find_error_connection(path,orientations,index_Scaffold_dict,connections,Chrom_Dict,h5file,h5write):
-    # new_connection = {}
-    # 定义一下长、宽、高 width=5，length=10
-    # 最小检测范围10*binsize
-    minlength=10
-    width=5
-    if len(path)<=1:
-        return path
-    else:
-        path_oritentions = orientation(path, orientations, head_dict, end_dict)
-        for i in range(1, len(path)):
-            pre_scaffold_name=index_Scaffold_dict[path[i-1]]
-            scaffold_name=index_Scaffold_dict[path[i]]
-            if path_oritentions[i]==0:
-                pre_contig=Chrom_Dict[pre_scaffold_name]["Scaffold"][-1]
-                pre_contig_oritention=Chrom_Dict[pre_scaffold_name]["Oritention"][-1]
-            else:
-                pre_contig = Chrom_Dict[pre_scaffold_name]["Scaffold"][0]
-                pre_contig_oritention =1- Chrom_Dict[pre_scaffold_name]["Oritention"][0]
-
-            if path_oritentions[i]==0:
-                contig=Chrom_Dict[scaffold_name]["Scaffold"][0]
-                contig_oritention=Chrom_Dict[scaffold_name]["Oritention"][0]
-            else:
-                contig = Chrom_Dict[scaffold_name]["Scaffold"][-1]
-                contig_oritention =1- Chrom_Dict[scaffold_name]["Oritention"][-1]
-            connection_tag=conection_dict[f'{pre_contig_oritention}{contig_oritention}']
-            connection_tag_rev = conection_dict[f'{contig_oritention}{pre_contig_oritention}']
-            if f'{pre_contig}/{contig}/{connection_tag}' in h5file:
-                data_for_evalue=h5file[f"{pre_contig}/{contig}/{connection_tag}"][...]
-                data_for_pre_contig=h5file[f"{pre_contig}/{pre_contig}/{connection_tag[0]}{connection_tag[0]}"][...]
-                data_for_contig = h5file[f"{contig}/{contig}/{connection_tag[1]}{connection_tag[1]}"][...]
-                if min(data_for_evalue.shape)<10:
-                    break
-                else:
-                    pre_edge=data_for_evalue[:width,:minlength]
-                    pre_contig_edge=data_for_pre_contig[:width,width:minlength+width]
-                    edge=data_for_evalue[:minlength,:width]
-                    contig_edge=data_for_contig[width:minlength+width,:width]
-            elif f'{contig}/{pre_contig}/{connection_tag_rev}' in h5file:
-                data_for_evalue = h5file[f"{contig}/{pre_contig}/{connection_tag_rev}"][...]
-                data_for_pre_contig = h5file[f"{pre_contig}/{pre_contig}/{connection_tag_rev[1]}{connection_tag_rev[1]}"][...]
-                data_for_contig = h5file[f"{contig}/{contig}/{connection_tag_rev[0]}{connection_tag_rev[0]}"][...]
-                if min(data_for_evalue.shape) < 10:
-                    break
-                else:
-                    edge = data_for_evalue[:minlength, :width]
-                    contig_edge = data_for_pre_contig[width:minlength+width, :width]
-                    pre_edge = data_for_evalue[:width, :minlength]
-                    pre_contig_edge = data_for_contig[:width, width:minlength+width]
-            if f'{pre_contig}/{contig}/{connection_tag}' not in h5write:
-                h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/pre_edge', data=pre_edge)
-                h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/edge', data=edge)
-                h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/pre_contig_edge', data=pre_contig_edge)
-                h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/contig_edge', data=contig_edge)
+# def find_error_connection(path,orientations,index_Scaffold_dict,Chrom_Dict,h5file,h5write):
+#     # new_connection = {}
+#     # 定义一下长、宽、高 width=5，length=10
+#     # 最小检测范围10*binsize
+#     minlength=10
+#     width=5
+#     if len(path)<=1:
+#         return path
+#     else:
+#         path_oritentions = orientation(path, orientations, head_dict, end_dict)
+#         for i in range(1, len(path)):
+#             pre_scaffold_name=index_Scaffold_dict[path[i-1]]
+#             scaffold_name=index_Scaffold_dict[path[i]]
+#             if path_oritentions[i]==0:
+#                 pre_contig=Chrom_Dict[pre_scaffold_name]["Scaffold"][-1]
+#                 pre_contig_oritention=Chrom_Dict[pre_scaffold_name]["Oritention"][-1]
+#             else:
+#                 pre_contig = Chrom_Dict[pre_scaffold_name]["Scaffold"][0]
+#                 pre_contig_oritention =1- Chrom_Dict[pre_scaffold_name]["Oritention"][0]
+#
+#             if path_oritentions[i]==0:
+#                 contig=Chrom_Dict[scaffold_name]["Scaffold"][0]
+#                 contig_oritention=Chrom_Dict[scaffold_name]["Oritention"][0]
+#             else:
+#                 contig = Chrom_Dict[scaffold_name]["Scaffold"][-1]
+#                 contig_oritention =1- Chrom_Dict[scaffold_name]["Oritention"][-1]
+#             connection_tag=conection_dict[f'{pre_contig_oritention}{contig_oritention}']
+#             connection_tag_rev = conection_dict[f'{contig_oritention}{pre_contig_oritention}']
+#             if f'{pre_contig}/{contig}/{connection_tag}' in h5file:
+#                 data_for_evalue=h5file[f"{pre_contig}/{contig}/{connection_tag}"][...]
+#                 data_for_pre_contig=h5file[f"{pre_contig}/{pre_contig}/{connection_tag[0]}{connection_tag[0]}"][...]
+#                 data_for_contig = h5file[f"{contig}/{contig}/{connection_tag[1]}{connection_tag[1]}"][...]
+#                 if min(data_for_evalue.shape)<10:
+#                     break
+#                 else:
+#                     pre_edge=data_for_evalue[:width,:minlength]
+#                     pre_contig_edge=data_for_pre_contig[:width,width:minlength+width]
+#                     edge=data_for_evalue[:minlength,:width]
+#                     contig_edge=data_for_contig[width:minlength+width,:width]
+#             elif f'{contig}/{pre_contig}/{connection_tag_rev}' in h5file:
+#                 data_for_evalue = h5file[f"{contig}/{pre_contig}/{connection_tag_rev}"][...]
+#                 data_for_pre_contig = h5file[f"{pre_contig}/{pre_contig}/{connection_tag_rev[1]}{connection_tag_rev[1]}"][...]
+#                 data_for_contig = h5file[f"{contig}/{contig}/{connection_tag_rev[0]}{connection_tag_rev[0]}"][...]
+#                 if min(data_for_evalue.shape) < 10:
+#                     break
+#                 else:
+#                     edge = data_for_evalue[:minlength, :width]
+#                     contig_edge = data_for_pre_contig[width:minlength+width, :width]
+#                     pre_edge = data_for_evalue[:width, :minlength]
+#                     pre_contig_edge = data_for_contig[:width, width:minlength+width]
+#             if f'{pre_contig}/{contig}/{connection_tag}' not in h5write:
+#                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/pre_edge', data=pre_edge)
+#                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/edge', data=edge)
+#                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/pre_contig_edge', data=pre_contig_edge)
+#                 h5write.create_dataset(f'{pre_contig}/{contig}/{connection_tag}/contig_edge', data=contig_edge)
 
 
 def get_short_format(orig_contact):
@@ -1599,7 +1604,6 @@ if __name__ == "__main__":
     ### init agp file
     init_agpfile_list = []
     Scaffolds_len_dict = {}
-    connections = {}
 
     diskcard_list = []
     split_data = {}
@@ -1618,7 +1622,7 @@ if __name__ == "__main__":
         contact_file = code + "_{}.txt"
         agp_iter_name = code + "_{}.agp"
         init_agp = code + "_init.agp"
-        init_contact = "{}_init.txt".format(code)
+        # init_contact = "{}_init.txt".format(code)
         init_contact = orig_contact
     else:
         Scaffolds_level_file = SeqIO.parse(fastafile_name, "fasta")
@@ -1637,7 +1641,7 @@ if __name__ == "__main__":
         contact_file = code + "_{}.txt"
         agp_iter_name = code + "_{}.agp"
         init_agp = code + "_init.agp"
-        init_contact = "{}_init.txt".format(code)
+        # init_contact = "{}_init.txt".format(code)
         init_contact = orig_contact
     ## 建立初始agp 文件
     for seq in Scaffolds_len_dict:
@@ -1737,8 +1741,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     Scaffold_len_Dict = sovle_link(init_contact, contact_file.format(iteration), score, oritention, Scaffold_dict,
-                                   Scaffold_len_Dict, iteration, agp_iter_name, init_agp,cutoff,
-                                   Process_num=Process_num,connections=connections,binsize=binsize,error_correction=error_correction,gap=gap)
+                                   Scaffold_len_Dict, iteration, agp_iter_name, init_agp, cutoff,
+                                   Process_num=Process_num, binsize=binsize, error_correction=error_correction, gap=gap)
 
     for_output_dict = Scaffold_len_Dict
     iteration += 1
@@ -1754,15 +1758,16 @@ if __name__ == "__main__":
             print("Reach the best!")
             break
         Scaffold_len_Dict = sovle_link(contact_file.format(iteration - 1), contact_file.format(iteration), score,
-                                       oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agp_iter_name,init_agp,
-                                       cutoff, Process_num=Process_num,connections=connections,binsize=binsize,error_correction=error_correction,gap=gap)
+                                       oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agp_iter_name, init_agp,
+                                       cutoff, Process_num=Process_num, binsize=binsize, error_correction=error_correction, gap=gap)
         if len(for_output_dict) >= clusters > len(Scaffold_len_Dict):
             print("Reach the best with {} Iterations".format(iteration - 2))
             iteration -= 1
             break
         for_output_dict = Scaffold_len_Dict
         iteration += 1
-
+    subprocess.run("rm {0}".format(contact_file.format(iteration - 1)), shell=True, check=True,
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # In[13]:
     scaffold_list = list(for_output_dict.keys())
     scaffold_list.sort()
@@ -1779,51 +1784,51 @@ if __name__ == "__main__":
         final_size_dict[item[0]] = int(item[1])
 
     # In[18]:
-    if Generate_fasta and (iteration > 0):
-        pd_data_list = []
-        for i in range(iteration):
-            temp_pd = pd.read_csv(agp_iter_name.format(i), sep='\t')
-            pd_data_list.append(temp_pd)
-        Chrom_list = list(pd.Categorical(pd_data_list[-1].Chromosome).categories)
-        Chrom_Dict = {}
-        for i in Chrom_list:
-            Chrom_Dict[i] = {}
-            temp_agp = pd_data_list[-1][pd_data_list[-1].Chromosome == i]
-            Chrom_Dict[i]["Scaffold"] = list(temp_agp.Contig_ID)
-            Chrom_Dict[i]["Oritention"] = list(temp_agp.Orientation)
-            Chrom_Dict[i]["Scaffold_len"] = list(temp_agp.Contig_end)
-        for i in range(len(pd_data_list) - 2, -1, -1):
-            templist = set([])
-            for chrom in Chrom_Dict:
-                temp_Scaffold = []
-                temp_Oritention = []
-                temp_Scaffold_len = []
-                for j in range(len(Chrom_Dict[chrom]["Scaffold"])):
-                    templist.add(Chrom_Dict[chrom]["Scaffold"][j])
-                    temp_agp = pd_data_list[i][pd_data_list[i].Chromosome == Chrom_Dict[chrom]["Scaffold"][j]]
-                    #             print()
-                    if Chrom_Dict[chrom]["Oritention"][j] == 1:
-                        temp_Scaffold.extend(list(temp_agp.Contig_ID[::-1]))
-                        temp_Oritention.extend(list(1 - temp_agp.Orientation[::-1]))
-                        temp_Scaffold_len.extend(list(temp_agp.Contig_end[::-1]))
-                    else:
-                        temp_Scaffold.extend(list(temp_agp.Contig_ID))
-                        temp_Oritention.extend(list(temp_agp.Orientation))
-                        temp_Scaffold_len.extend(list(temp_agp.Contig_end))
-                Chrom_Dict[chrom]["Scaffold"] = temp_Scaffold
-                Chrom_Dict[chrom]["Oritention"] = temp_Oritention
-                Chrom_Dict[chrom]["Scaffold_len"] = temp_Scaffold_len
-            temchrom = set(pd_data_list[i].Chromosome)
-            newset = temchrom - templist
-            for k in newset:
-                Chrom_Dict[k] = {}
-                temp_agp = pd_data_list[i][pd_data_list[i].Chromosome == k]
-                Chrom_Dict[k]["Scaffold"] = list(temp_agp.Contig_ID)
-                Chrom_Dict[k]["Oritention"] = list(temp_agp.Orientation)
-                Chrom_Dict[k]["Scaffold_len"] = list(temp_agp.Contig_end)
-        all_agp = generate_final_agp(Chrom_Dict,gap)
-        all_agp.to_csv("./{}.agp".format(code), sep='\t',index=False)
-        gf.main("./{}.agp".format(code),fastafile_name,code)
+    # if Generate_fasta and (iteration > 0):
+    pd_data_list = []
+    for i in range(iteration):
+        temp_pd = pd.read_csv(agp_iter_name.format(i), sep='\t')
+        pd_data_list.append(temp_pd)
+    Chrom_list = list(pd.Categorical(pd_data_list[-1].Chromosome).categories)
+    Chrom_Dict = {}
+    for i in Chrom_list:
+        Chrom_Dict[i] = {}
+        temp_agp = pd_data_list[-1][pd_data_list[-1].Chromosome == i]
+        Chrom_Dict[i]["Scaffold"] = list(temp_agp.Contig_ID)
+        Chrom_Dict[i]["Oritention"] = list(temp_agp.Orientation)
+        Chrom_Dict[i]["Scaffold_len"] = list(temp_agp.Contig_end)
+    for i in range(len(pd_data_list) - 2, -1, -1):
+        templist = set([])
+        for chrom in Chrom_Dict:
+            temp_Scaffold = []
+            temp_Oritention = []
+            temp_Scaffold_len = []
+            for j in range(len(Chrom_Dict[chrom]["Scaffold"])):
+                templist.add(Chrom_Dict[chrom]["Scaffold"][j])
+                temp_agp = pd_data_list[i][pd_data_list[i].Chromosome == Chrom_Dict[chrom]["Scaffold"][j]]
+                #             print()
+                if Chrom_Dict[chrom]["Oritention"][j] == 1:
+                    temp_Scaffold.extend(list(temp_agp.Contig_ID[::-1]))
+                    temp_Oritention.extend(list(1 - temp_agp.Orientation[::-1]))
+                    temp_Scaffold_len.extend(list(temp_agp.Contig_end[::-1]))
+                else:
+                    temp_Scaffold.extend(list(temp_agp.Contig_ID))
+                    temp_Oritention.extend(list(temp_agp.Orientation))
+                    temp_Scaffold_len.extend(list(temp_agp.Contig_end))
+            Chrom_Dict[chrom]["Scaffold"] = temp_Scaffold
+            Chrom_Dict[chrom]["Oritention"] = temp_Oritention
+            Chrom_Dict[chrom]["Scaffold_len"] = temp_Scaffold_len
+        temchrom = set(pd_data_list[i].Chromosome)
+        newset = temchrom - templist
+        for k in newset:
+            Chrom_Dict[k] = {}
+            temp_agp = pd_data_list[i][pd_data_list[i].Chromosome == k]
+            Chrom_Dict[k]["Scaffold"] = list(temp_agp.Contig_ID)
+            Chrom_Dict[k]["Oritention"] = list(temp_agp.Orientation)
+            Chrom_Dict[k]["Scaffold_len"] = list(temp_agp.Contig_end)
+    all_agp = generate_final_agp(Chrom_Dict,gap)
+    all_agp.to_csv("./{}.agp".format(code), sep='\t',index=False)
+    gf.main("./{}.agp".format(code),fastafile_name,code)
 
     # In[19]:
 
@@ -1849,7 +1854,7 @@ if __name__ == "__main__":
     with Pool(processes=Process_num) as pool:
         pool.map(convert_contactmat, list_temp_names)
     subprocess.run("cat tmp/{0}*.re >{1};rm tmp/*".format("convertemp",
-                                                          contact_file.format(iteration)), shell=True, check=True,
+                                                          "{}.txt".format(code)), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
@@ -1863,16 +1868,21 @@ if __name__ == "__main__":
             outfiles.write("{}\t{}\n".format(scaffold, chrom_size_dict[scaffold]))
 
     # In[30]:
-    converscript.convert_data("{}.Chrom.sizes".format(code),contact_file.format(iteration),contact_file.format(iteration) + ".re")
+    converscript.convert_data("{}.Chrom.sizes".format(code),"{}.txt".format(code),"{}.txt".format(code) + ".re")
     # subprocess.run("python {0} {1} {2} {3}".format(converscript, "{}.Chrom.sizes".format(code),
     #                                                contact_file.format(iteration),
     #                                                contact_file.format(iteration) + ".re"),
     #                shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format(contact_file.format(iteration) + ".re",
-                                                                    contact_file.format(iteration) + ".re.sort"),
+    subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format("{}.txt".format(code)+ ".re",
+                                                                    "{}.txt".format(code) + ".re.sort"),
                    shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     subprocess.run("{0} pre {1} {1}.hic {2}".format(juicer_tools,
-                                                    contact_file.format(iteration) + ".re.sort",
+                                                    "{}.txt".format(code) + ".re.sort",
                                                     "{}.Chrom.sizes".format(code)), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    subprocess.run("rm {0}".format("{}.txt".format(code)), shell=True, check=True,
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run("rm {0}".format("{}.txt".format(code)+ ".re"), shell=True, check=True,
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run("rm {0}".format("{}.txt".format(code) + ".re.sort"), shell=True, check=True,
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
