@@ -1757,6 +1757,8 @@ if __name__ == "__main__":
                                                                                 Process_num=Process_num)
         if flag:
             print("Reach the best!")
+            subprocess.run("rm {0}".format(contact_file.format(iteration - 1)), shell=True, check=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             break
         Scaffold_len_Dict = sovle_link(contact_file.format(iteration - 1), contact_file.format(iteration), score,
                                        oritention, Scaffold_dict, Scaffold_len_Dict, iteration, agp_iter_name, init_agp,
@@ -1767,8 +1769,7 @@ if __name__ == "__main__":
             break
         for_output_dict = Scaffold_len_Dict
         iteration += 1
-    subprocess.run("rm {0}".format(contact_file.format(iteration - 1)), shell=True, check=True,
-                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     # In[13]:
     scaffold_list = list(for_output_dict.keys())
     scaffold_list.sort()
