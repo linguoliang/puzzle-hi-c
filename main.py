@@ -1788,6 +1788,7 @@ if __name__ == "__main__":
     # In[18]:
     # if Generate_fasta and (iteration > 0):
     pd_data_list = []
+    pd_data_list.append(pd.read_csv(init_agp, sep='\t'))
     for i in range(iteration):
         temp_pd = pd.read_csv(agp_iter_name.format(i), sep='\t')
         pd_data_list.append(temp_pd)
