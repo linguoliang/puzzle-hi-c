@@ -1830,7 +1830,7 @@ if __name__ == "__main__":
             Chrom_Dict[k]["Oritention"] = list(temp_agp.Orientation)
             Chrom_Dict[k]["Scaffold_len"] = list(temp_agp.Contig_end)
     all_agp = generate_final_agp(Chrom_Dict,gap)
-    all_agp.to_csv("./{}.agp".format(code), sep='\t',index=False)
+    all_agp.to_csv("./{}.agp".format(code), sep='\t',header=False,index=False)
     gf.main("./{}.agp".format(code),fastafile_name,code)
 
     # In[19]:
