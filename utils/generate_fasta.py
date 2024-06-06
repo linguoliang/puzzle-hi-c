@@ -1,10 +1,11 @@
 import sys
-
 from Bio import SeqIO
 import pandas as pd
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
+AGP_HEADER=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
+                                         "Contig_end", "Orientation"]
 def GenerateChrom(agp,Contigs_dict,Chr_name="Chr02"):
 #     N_seq=Seq("N"*Seq_N_len)
     Chr=SeqRecord("",id=Chr_name,name=Chr_name,description=Chr_name)
@@ -37,7 +38,7 @@ def get_scaffold_seq(filename):
     return scaffold_dict
 
 def main(Path,seq_data_path,res):
-    all_agp = pd.read_csv(Path, sep='\t')
+    all_agp = pd.read_csv(Path,names=AGP_HEADER,sep='\t',index_col=False)
     # all_agp.to_csv("{}/Puzzle_{}.agp".format(result_path, res), sep='\t', index=False)
     scaffold_dict = get_scaffold_seq(seq_data_path)
     chroms = pd.Categorical(all_agp.Chromosome).categories

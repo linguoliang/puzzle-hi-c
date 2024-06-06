@@ -46,7 +46,8 @@ connection_tags = ['es','ss', 'ee','se']
 ## 0和1分别代表apg文件中得正向和反向
 conection_dict={'00':'es','01':'ee','10':'ss','11':'se'}
 ## 反向
-
+AGP_HEADER=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
+                                         "Contig_end", "Orientation"]
 
 def generate_seq(seq, list_seg):
     seqs = []
@@ -653,8 +654,7 @@ def generate_agp(final_path, final_path_orientation, index, index_Scaffold_dict,
         temp_data = [Chromosome, Start, End, Order, Tag, Contig_ID, Contig_start, Contig_end, Orientation]
         temp_list.append(temp_data)
     tempagp = pd.DataFrame(data=temp_list,
-                           columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
-                                    "Contig_end", "Orientation"])
+                           columns=AGP_HEADER)
     return tempagp
 
 def survey_contactmat(inputfile):
@@ -759,14 +759,14 @@ def convert_contactmat(inputfile):
                 if (x[1] in scaffold_index_dict) and (x[5] in scaffold_index_dict):
                     chr1index = scaffold_index_dict[x[1]]
                     chr1info = Scaffold_dict_list[chr1index][x[1]]
-                    if str(chr1info[1]) == "0":
+                    if str(chr1info[1]) == "0" or str(chr1info[1]) == "+":
                         pos1 = chr1info[2] + int(x[2]) - 1
                     else:
                         pos1 = chr1info[3] - int(x[2]) + 1
                     chr2index = scaffold_index_dict[x[5]]
                     chr2info = Scaffold_dict_list[chr2index][x[5]]
                     #                     chr2info=Scaffold_dict[x[5]]
-                    if str(chr2info[1]) == "0":
+                    if str(chr2info[1]) == "0" or str(chr2info[1]) == "+":
                         pos2 = chr2info[2] + int(x[6]) - 1
                     else:
                         pos2 = chr2info[3] - int(x[6]) + 1
@@ -939,9 +939,7 @@ def generate_scaffold_info(agp_list,gap=100):
         Scaffold_dict_list.append(Scaffold_dict)
     ##生成迭代的agp文件
     interation_agp = pd.DataFrame(data=[],
-                                  columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID",
-                                           "Contig_start",
-                                           "Contig_end", "Orientation"])
+                                  columns=AGP_HEADER)
     for tempagp in agp_list:
         interation_agp = pd.concat([interation_agp,tempagp])   # Add support for pandas2
     return faker_scaffold_len_dict,scaffold_index_dict,fake_chrom_dict,Scaffold_dict_list,interation_agp
@@ -1119,8 +1117,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
             Orientation = final_path_orientation[i][0]
             data = [[Chromosome, Start, End, Order, Tag, Contig_ID, Contig_start, Contig_end, Orientation]]
             tempagp = pd.DataFrame(data=data,
-                                   columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
-                                            "Contig_end", "Orientation"])
+                                   columns=AGP_HEADER)
             agp_list.append(tempagp)
         else:
             tempagp = generate_agp(final_path, final_path_orientation, i, index_Scaffold_dict, Scaffold_len_Dict,
@@ -1155,7 +1152,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
     #                                        "Contig_end", "Orientation"])
     # for tempagp in agp_list:
     #     interation_agp = interation_agp.append(tempagp)
-    interation_agp.to_csv(agpfilename.format(iteration), sep="\t", index=False)
+    interation_agp.to_csv(agpfilename.format(iteration), sep="\t",header=False, index=False)
     subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2};".format(Process_num,
                                                                inputfile, "convertemp"), shell=True, check=True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1229,7 +1226,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
 
         faker_scaffold_len_dict, scaffold_index_dict, fake_chrom_dict, Scaffold_dict_list, interation_agp = generate_scaffold_info(
             tmp_agp_list,gap)
-        interation_agp.to_csv(agpfilename.format(iteration), sep="\t", index=False)
+        interation_agp.to_csv(agpfilename.format(iteration), sep="\t",header=False, index=False)
         with h5py.File("tmp/convert.h5", "w") as convert:
             convert["Scaffold_dict_list"] = pickle.dumps(Scaffold_dict_list, protocol=0)
             convert["scaffold_index_dict"] = pickle.dumps(scaffold_index_dict, protocol=0)
@@ -1250,8 +1247,7 @@ def sovle_link(inputfile, outputfile, score, oritention, Scaffold_dict, Scaffold
 
 def generate_final_agp(Chrom_Dict,gap):
     Orientation2sign={0:"+",1:"-"}
-    all_agp = pd.DataFrame(data=[], columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
-                                             "Contig_end", "Orientation"])
+    all_agp = pd.DataFrame(data=[], columns=AGP_HEADER)
     agp_list=[]
     for chrom in Chrom_Dict:
         temp_list = []
@@ -1268,8 +1264,7 @@ def generate_final_agp(Chrom_Dict,gap):
             temp_data = [Chromosome, Start, End, Order, Tag, Contig_ID, Contig_start, Contig_end, Orientation2sign[Orientation]]
             temp_list.append(temp_data)
         tempagp = pd.DataFrame(data=temp_list,
-                               columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
-                                        "Contig_end", "Orientation"])
+                               columns=AGP_HEADER)
         tempagp["Start"] = 1
         tempagp["End"] = int(tempagp.iloc[0, 7])
         #         scaffold_index_dict[agp_list[i].iloc[0,5]]=i
@@ -1286,8 +1281,7 @@ def generate_final_agp(Chrom_Dict,gap):
             tempagpwithgap.append(gap_item)
         tempagp.iloc[-1, 3] = 2 * len(tempagp)-1
         tempagpwithgap.append(list(tempagp.iloc[-1, :]))
-        pd_tempagpwithgap = pd.DataFrame(data=tempagpwithgap,columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
-                                        "Contig_end", "Orientation"])
+        pd_tempagpwithgap = pd.DataFrame(data=tempagpwithgap,columns=AGP_HEADER)
         agp_list.append([chrom,pd_tempagpwithgap.iloc[-1, 2],pd_tempagpwithgap])
         # all_agp = all_agp.append(tempagp)
     agp_list.sort(key=lambda i:i[1],reverse=True)
@@ -1438,10 +1432,10 @@ def generage_agp_from_scratch():
 def get_all_conections(iteration,agp_iter_name,init_agp,connections,conection_dict):
     pd_data_list = []
     if iteration==0:
-        pd_data_list.append(pd.read_csv(init_agp, sep='\t'))
+        pd_data_list.append(pd.read_csv(init_agp, names=AGP_HEADER,sep='\t',index_col=False))
     else:
         for i in range(iteration):
-            temp_pd = pd.read_csv(agp_iter_name.format(i), sep='\t')
+            temp_pd = pd.read_csv(agp_iter_name.format(i), names=AGP_HEADER,sep='\t',index_col=False)
             pd_data_list.append(temp_pd)
     Chrom_list = list(pd.Categorical(pd_data_list[-1].Chromosome).categories)
     Chrom_Dict = {}
@@ -1658,9 +1652,8 @@ if __name__ == "__main__":
         Orientation = 0
         init_agpfile_list.append([Chromosome, Start, End, Order, Tag, Contig_ID, Contig_start, Contig_end, Orientation])
     init_agpfile = pd.DataFrame(data=init_agpfile_list,
-                                columns=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
-                                         "Contig_end", "Orientation"])
-    init_agpfile.to_csv(init_agp, sep="\t", index=False)
+                                columns=AGP_HEADER)
+    init_agpfile.to_csv(init_agp, sep="\t",header=False, index=False)
     # split_contactmat(orig_contact,init_contact,init_agpfile)
 
     ## 分割文件，将contact matrix文件分割成多个
@@ -1788,9 +1781,9 @@ if __name__ == "__main__":
     # In[18]:
     # if Generate_fasta and (iteration > 0):
     pd_data_list = []
-    pd_data_list.append(pd.read_csv(init_agp, sep='\t'))
+    pd_data_list.append(pd.read_csv(init_agp, names=AGP_HEADER,sep='\t',index_col=False))
     for i in range(iteration):
-        temp_pd = pd.read_csv(agp_iter_name.format(i), sep='\t')
+        temp_pd = pd.read_csv(agp_iter_name.format(i), names=AGP_HEADER,sep='\t',index_col=False)
         pd_data_list.append(temp_pd)
     Chrom_list = list(pd.Categorical(pd_data_list[-1].Chromosome).categories)
     Chrom_Dict = {}
