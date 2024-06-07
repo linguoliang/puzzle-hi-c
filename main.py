@@ -23,6 +23,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import utils.convert_data as converscript
 import utils.generate_fasta as gf
+import utils.PuzzleHiC2JBAT as JBAT
 # import numpy as np
 
 parser = argparse.ArgumentParser()
@@ -742,69 +743,8 @@ def convert_contactmat(inputfile):
         Scaffold_dict_list = pickle.loads(convert["Scaffold_dict_list"][()])
         scaffold_index_dict = pickle.loads(convert["scaffold_index_dict"][()])
         fake_chrom_dict = pickle.loads(convert["fake_chrom_dict"][()])
-        # faker_scaffold_len_dict=pickle.loads(convert["faker_scaffold_len_dict"][()])
-        # binsize = convert["binsize"][()]
-        # convert["faker_scaffold_len_dict"] = pickle.dumps(faker_scaffold_len_dict, protocol=0)
-    # add function for correction
-    # correct_dict={}
-    # correct_array={}
-    # with h5py.File(f"tmp/{inputfile}.h5",'w') as stats:
-    with open(inputfile) as HiCdata:
-        tmp_write=[]
-        count=0
-        with open(inputfile + ".re", 'w') as Record:
-            for x in HiCdata:
-                x = x.strip()
-                x = x.split("\t")
-                if (x[1] in scaffold_index_dict) and (x[5] in scaffold_index_dict):
-                    chr1index = scaffold_index_dict[x[1]]
-                    chr1info = Scaffold_dict_list[chr1index][x[1]]
-                    if str(chr1info[1]) == "0" or str(chr1info[1]) == "+":
-                        pos1 = chr1info[2] + int(x[2]) - 1
-                    else:
-                        pos1 = chr1info[3] - int(x[2]) + 1
-                    chr2index = scaffold_index_dict[x[5]]
-                    chr2info = Scaffold_dict_list[chr2index][x[5]]
-                    #                     chr2info=Scaffold_dict[x[5]]
-                    if str(chr2info[1]) == "0" or str(chr2info[1]) == "+":
-                        pos2 = chr2info[2] + int(x[6]) - 1
-                    else:
-                        pos2 = chr2info[3] - int(x[6]) + 1
-                    chr1=fake_chrom_dict[chr1index]
-                    chr2=fake_chrom_dict[chr2index]
-                    # if chr1==chr2 and faker_scaffold_len_dict[chr1]>1000000 and chr1!=x[1]:
-                    #     distant=pos2-pos1
-                    #     if abs(distant)>20000:
-                    #         if chr1 not in correct_dict:
-                    #             correct_dict[chr1] = np.zeros(faker_scaffold_len_dict[chr1] // binsize + 1,
-                    #                                           dtype=np.int32)
-                    #             correct_array[chr1]=np.zeros((2,faker_scaffold_len_dict[chr1] // binsize + 1),
-                    #                                           dtype=np.int32)
-                    #         correct_dict[chr1][pos1 // binsize] += 1
-                    #         correct_dict[chr1][pos2 // binsize] += 1
-                    #         if abs(distant)<500000:
-                    #             if distant<0:
-                    #                 correct_array[chr1][0][pos1 // binsize] += 1
-                    #                 correct_array[chr1][1][pos2 // binsize] += 1
-                    #             else:
-                    #                 correct_array[chr1][1][pos1 // binsize] += 1
-                    #                 correct_array[chr1][0][pos2 // binsize] += 1
-                    x[1] = chr1
-                    x[5] = chr2
-                    x[2] = str(pos1)
-                    x[6] = str(pos2)
-                    # for correction
-                    tmp_write.append("\t".join(x) + '\n')
-                    count += 1
-                    if count>1999:
-                        Record.writelines(tmp_write)
-                        tmp_write=[]
-                        count=0
-            if len(tmp_write)>0:
-                Record.writelines(tmp_write)
-    # with h5py.File(f"{inputfile}.h5",'w') as stats:
-    #     stats["correct_dict"]=pickle.dumps(correct_dict,protocol=0)
-    #     stats["correct_array"] = pickle.dumps(correct_array, protocol=0)
+    JBAT.convert_contact_txt(inputfile, Scaffold_dict_list, scaffold_index_dict, fake_chrom_dict)
+
 def build_index_scaffold(Scaffold_dict):
     index_Scaffold_dict = {}
     for key in range(len(Scaffold_dict)):
