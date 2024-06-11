@@ -1231,24 +1231,6 @@ def generate_final_agp(Chrom_Dict,gap):
     return all_agp
 
 
-def get_convert_info(all_agp):
-    fake_chrom_dict = list(pd.Categorical(all_agp.Chromosome).categories)
-    Scaffold_dict_list = []
-    scaffold_index_dict = {}
-    faker_scaffold_len_dict={}
-    for i in range(len(fake_chrom_dict)):
-        temp_agp = all_agp[all_agp.Chromosome == fake_chrom_dict[i]]
-        temp_agp=temp_agp[temp_agp.Tag == "W"]
-        for sca in list(temp_agp.Contig_ID):
-            scaffold_index_dict[sca] = i
-        Scaffold_dict = {}
-        for x in temp_agp.values:
-            Scaffold_dict[x[5]] = [int(x[7]), x[8], x[1], x[2]]
-        Scaffold_dict_list.append(Scaffold_dict)
-        faker_scaffold_len_dict[temp_agp.iloc[-1, 0]] = temp_agp.iloc[-1, 2]
-    return fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict
-
-
 ## 通过对agp获得chrom_size
 def get_chrom_size_from_agp(agp):
     cat = list(pd.Categorical(agp.Chromosome).categories)
@@ -1768,7 +1750,7 @@ if __name__ == "__main__":
 
     # In[19]:
 
-    fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict = get_convert_info(all_agp)
+    fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict = JBAT.get_convert_info(all_agp)
 
     # In[20]:
     # subprocess.run("rm tmp/*", shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

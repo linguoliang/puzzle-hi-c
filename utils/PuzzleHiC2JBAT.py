@@ -1,5 +1,6 @@
 import pandas as pd
-
+AGP_HEADER=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
+                                         "Contig_end", "Orientation"]
 def get_convert_info(all_agp):
     fake_chrom_dict = list(pd.Categorical(all_agp.Chromosome).categories)
     Scaffold_dict_list = []
@@ -54,3 +55,15 @@ def convert_contact_txt(inputfile,Scaffold_dict_list,scaffold_index_dict,fake_ch
                         count=0
             if len(tmp_write)>0:
                 Record.writelines(tmp_write)
+
+def convert_to_supter_scaffold(agp):
+    agp_contigs = agp[agp.Tag == "W"]
+    agp_contigs.Chromosome="assembly"
+    agp_contigs.iloc[0, 3] = 1
+    agp_contigs.iloc[0,1]=agp_contigs.iloc[0,6]
+    agp_contigs.iloc[0, 2] = agp_contigs.iloc[0, 7]
+    for i in range(1,len(agp_contigs)):
+        agp_contigs.iloc[i,3]=agp_contigs.iloc[i-1, 3]+1
+        agp_contigs.iloc[i, 1] = agp_contigs.iloc[i-1, 2]
+        agp_contigs.iloc[i, 2] = agp_contigs.iloc[i - 1, 2]+ agp_contigs.iloc[i, 7]
+    return agp_contigs
