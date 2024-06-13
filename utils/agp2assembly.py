@@ -27,7 +27,7 @@ def agp2assembly(agp,assembly):
             Chromosome_chain[Chromosome].append(Orientation+str(idx))
         for Chromosome in Chromosome_chain:
             print(" ".join(map(str,Chromosome_chain[Chromosome])),file=f)
-        agp_contigs=JBAT.convert_to_supter_scaffold(agp_contigs)
+        # agp_contigs=JBAT.convert_to_supter_scaffold(agp_contigs)
 
 if __name__ == '__main__':
     # if len(sys.argv) != 3:
