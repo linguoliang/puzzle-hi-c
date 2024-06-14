@@ -2,13 +2,6 @@ import pandas as pd
 import argparse
 import sys
 
-import numpy as np
-from Bio import SeqIO
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-p", '--prefix', default="Nx", type=str, help='Prefix! default:Nx')
-parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file!')
-parser.add_argument('-N', '--nx', default="50,90,95,98,99", type=str, help='Nx list! default:50,90,95,98,99')
 
 AGP_HEADER=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
                                          "Contig_end", "Orientation"]
@@ -80,11 +73,4 @@ def convert_to_supter_scaffold(agp):
     return agp_contigs
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    fasta_file_name = args.fasta
-    prefix = args.prefix
-    nx_list = get_nx_list(args.nx)
-    contig_len_list = get_contig_length(fasta_file_name, True)
-    nx_contig = caculate_nx(nx_list, contig_len_list)
-    print_to_screen(nx_contig,contig_len_list)
-    write_to_disk(nx_contig,contig_len_list, fasta_file_name, prefix)
+    pass
