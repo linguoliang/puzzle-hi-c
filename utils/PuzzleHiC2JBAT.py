@@ -1,4 +1,8 @@
 import pandas as pd
+import argparse
+import sys
+
+
 AGP_HEADER=["Chromosome", "Start", "End", "Order", "Tag", "Contig_ID", "Contig_start",
                                          "Contig_end", "Orientation"]
 def get_convert_info(all_agp):
@@ -30,16 +34,16 @@ def convert_contact_txt(inputfile,Scaffold_dict_list,scaffold_index_dict,fake_ch
                     chr1index = scaffold_index_dict[x[1]]
                     chr1info = Scaffold_dict_list[chr1index][x[1]]
                     if str(chr1info[1]) == "0" or str(chr1info[1]) == "+":
-                        pos1 = chr1info[2] + int(x[2]) - 1
+                        pos1 = int(chr1info[2]) + int(x[2]) - 1
                     else:
-                        pos1 = chr1info[3] - int(x[2]) + 1
+                        pos1 = int(chr1info[3]) - int(x[2]) + 1
                     chr2index = scaffold_index_dict[x[5]]
                     chr2info = Scaffold_dict_list[chr2index][x[5]]
                     #                     chr2info=Scaffold_dict[x[5]]
                     if str(chr2info[1]) == "0" or str(chr2info[1]) == "+":
-                        pos2 = chr2info[2] + int(x[6]) - 1
+                        pos2 = int(chr2info[2]) + int(x[6]) - 1
                     else:
-                        pos2 = chr2info[3] - int(x[6]) + 1
+                        pos2 = int(chr2info[3]) - int(x[6]) + 1
                     chr1=fake_chrom_dict[chr1index]
                     chr2=fake_chrom_dict[chr2index]
                     x[1] = chr1
@@ -56,14 +60,25 @@ def convert_contact_txt(inputfile,Scaffold_dict_list,scaffold_index_dict,fake_ch
             if len(tmp_write)>0:
                 Record.writelines(tmp_write)
 
-def convert_to_supter_scaffold(agp):
+def get_chrom_size_from_agp(agp):
+    cat = list(pd.Categorical(agp.Chromosome).categories)
+    chrom_size_dict = {}
+    for chrom in cat:
+        tmp_agp = agp[agp.Chromosome == chrom]
+        chrom_size_dict[chrom] = tmp_agp.End.max()
+    return chrom_size_dict
+
+def convert_to_super_scaffold_agp(agp):
     agp_contigs = agp[agp.Tag == "W"]
     agp_contigs.Chromosome="assembly"
     agp_contigs.iloc[0, 3] = 1
-    agp_contigs.iloc[0,1]=agp_contigs.iloc[0,6]
-    agp_contigs.iloc[0, 2] = agp_contigs.iloc[0, 7]
+    agp_contigs.iloc[0,1]=int(agp_contigs.iloc[0,6])
+    agp_contigs.iloc[0, 2] = int(agp_contigs.iloc[0, 7])
     for i in range(1,len(agp_contigs)):
         agp_contigs.iloc[i,3]=agp_contigs.iloc[i-1, 3]+1
-        agp_contigs.iloc[i, 1] = agp_contigs.iloc[i-1, 2]
-        agp_contigs.iloc[i, 2] = agp_contigs.iloc[i - 1, 2]+ agp_contigs.iloc[i, 7]
+        agp_contigs.iloc[i, 1] = int(agp_contigs.iloc[i-1, 2])
+        agp_contigs.iloc[i, 2] = int(agp_contigs.iloc[i - 1, 2])+ int(agp_contigs.iloc[i, 7])
     return agp_contigs
+
+if __name__ == "__main__":
+    pass
