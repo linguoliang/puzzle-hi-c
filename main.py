@@ -1231,14 +1231,6 @@ def generate_final_agp(Chrom_Dict,gap):
     return all_agp
 
 
-## 通过对agp获得chrom_size
-def get_chrom_size_from_agp(agp):
-    cat = list(pd.Categorical(agp.Chromosome).categories)
-    chrom_size_dict = {}
-    for chrom in cat:
-        tmp_agp = agp[agp.Chromosome == chrom]
-        chrom_size_dict[chrom] = tmp_agp.End.max()
-    return chrom_size_dict
 
 def read_init_maps(filename):
     connection_tags = ['es','ss', 'ee','se']
@@ -1778,7 +1770,7 @@ if __name__ == "__main__":
 
 
     # In[27]:
-    chrom_size_dict = get_chrom_size_from_agp(all_agp)
+    chrom_size_dict = JBAT.get_chrom_size_from_agp(all_agp)
     with open("{}.Chrom.sizes".format(code), 'w') as outfiles:
         chrom_keys=list(chrom_size_dict.keys())
         chrom_keys.sort(key=lambda x:int(x[9:]))
@@ -1786,7 +1778,7 @@ if __name__ == "__main__":
             outfiles.write("{}\t{}\n".format(scaffold, chrom_size_dict[scaffold]))
 
     # In[30]:
-    converscript.convert_data("{}.Chrom.sizes".format(code),"{}.txt".format(code),"{}.txt".format(code) + ".re")
+    converscript.convert_data(chrom_size_dict,"{}.txt".format(code),"{}.txt".format(code) + ".re")
     # subprocess.run("python {0} {1} {2} {3}".format(converscript, "{}.Chrom.sizes".format(code),
     #                                                contact_file.format(iteration),
     #                                                contact_file.format(iteration) + ".re"),
