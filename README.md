@@ -102,7 +102,17 @@ python3 ${PuzzleHiC}/main.py \
         -j {Juicer}/PBS/scripts/juicer_tools \
         -n 8
 ```
+## Utils
+### Generate  ```.assembly``` and ```.hic``` files for Juicebox Assembly Tools (JBAT)
+```shell
+python agp2assembly.py -a agpfile -m merge_nodup.txt -j {Juicer}/PBS/scripts/juicer_tools -p prefix
+```
+### Generate  ```.agp``` file according to ```.assembly``` file
+```shell
+python agp2assembly.py -a assembly_file -g 100 -p prefix
+```
+### 
 ## To do list
 
-* Generate  ```.assembly``` file for Juicebox Assembly Tools (JBAT)
+*  ~~Generate  ```.assembly``` file for Juicebox Assembly Tools (JBAT)~~
 
