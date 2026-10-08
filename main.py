@@ -24,6 +24,7 @@ import pandas as pd
 # import tqdm
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from utils.alignment_input import FORMATS, normalize_contacts
 import utils.convert_data as converscript
 import utils.generate_fasta as gf
 import utils.PuzzleHiC2JBAT as JBAT
@@ -31,8 +32,16 @@ import utils.PuzzleHiC2JBAT as JBAT
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--clusters', required=True, type=int, help='Chromosomes number.')
-parser.add_argument('-m', '--matrix', required=True, type=str, help='The matrix file path.eg: merge_nodup.txt')
-parser.add_argument("-j", "--juicer_tools",required=True,type=str,help="juicer_tools path.")
+parser.add_argument('-m', '--matrix', required=True, type=str, help='Read-level contacts: Juicer, BAM/SAM, .pairs or HiC-Pro allValidPairs.')
+parser.add_argument('--input-format', choices=FORMATS, default='auto',
+                    help='Input format (default: infer from filename; otherwise Juicer).')
+parser.add_argument('--min-mapq', type=int, default=0,
+                    help='Minimum MAPQ for both ends (default: 0; requires MAPQ fields).')
+export_options = parser.add_mutually_exclusive_group(required=True)
+export_options.add_argument("-j", "--juicer_tools", type=str,
+                            help="juicer_tools path, required for .hic export.")
+export_options.add_argument('--skip-hic', action='store_true',
+                            help='Skip .hic export; no Juicer installation is needed.')
 parser.add_argument('-f', '--fasta', required=True, type=str, help='Scaffold fasta file.')
 parser.add_argument("-p", '--prefix', default="sample", type=str, help='Output prefix! Default: sample.')
 parser.add_argument('-s', '--binsize', default=10000, type=int, help='The bin size. Default: 10000.')
@@ -1484,18 +1493,7 @@ def get_all_conections(iteration,agp_iter_name,init_agp,connections,conection_di
 
 
 def get_short_format(orig_contact):
-    with open(orig_contact) as inputfile:
-        with open("merged_nodups_short_format.txt", 'w') as outfile:
-            tmp_write = []
-            for item in inputfile:
-                itemlist = item.split(maxsplit=8)
-                # if (int(itemlist[8]) >= quality) and (int(itemlist[11]) >= quality):
-                tmp_write.append("\t".join(itemlist[0:8]) + '\n')
-                if len(tmp_write) >= WRITE_BUFFER_LIMIT:
-                    outfile.writelines(tmp_write)
-                    tmp_write = []
-            if tmp_write:
-                outfile.writelines(tmp_write)
+    return normalize_contacts(orig_contact, "merged_nodups_short_format.txt", 'juicer')
 
 
 # parser.add_argument("-b", "--bed", required=True, type=str, help="The bed file path!")
@@ -1516,7 +1514,12 @@ if __name__ == "__main__":
     # converscript = "/public/home/lgl/bin/conver_data_for_hic-Copy1.py"
     juicer_tools = args.juicer_tools
     code = args.prefix
-    get_short_format(args.matrix)
+    try:
+        pair_count = normalize_contacts(args.matrix, "merged_nodups_short_format.txt",
+                                        args.input_format, args.min_mapq)
+    except (ValueError, OSError) as exc:
+        parser.error(str(exc))
+    print(f"Loaded {pair_count} contact pairs.")
     orig_contact="merged_nodups_short_format.txt"
     fastafile_name = args.fasta
 
@@ -1757,32 +1760,6 @@ if __name__ == "__main__":
     all_agp.to_csv("./{}.agp".format(code), sep='\t',header=False,index=False)
     gf.main("./{}.agp".format(code),fastafile_name,code)
 
-    # In[19]:
-
-    fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict = JBAT.get_convert_info(all_agp)
-
-    # In[20]:
-    # subprocess.run("rm tmp/*", shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2}".format(Process_num,
-                                                               "merged_nodups_short_format.txt", "convertemp"),
-                   shell=True,
-                   check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    with h5py.File("tmp/convert.h5", "w") as convert:
-        convert["Scaffold_dict_list"] = dump_pickle(Scaffold_dict_list)
-        convert["scaffold_index_dict"] = dump_pickle(scaffold_index_dict)
-        convert["fake_chrom_dict"] = dump_pickle(fake_chrom_dict)
-        convert["faker_scaffold_len_dict"] = dump_pickle(faker_scaffold_len_dict)
-        convert["binsize"] = binsize
-    list_temp_names = []
-    for i in range(Process_num):
-        list_temp_names.append("tmp/{0}{1:0>3d}".format("convertemp", i))
-
-    with Pool(processes=Process_num) as pool:
-        pool.map(convert_contactmat, list_temp_names)
-    merge_tmp_re_files("convertemp", "{}.txt".format(code), clean_tmp=True)
-
-
-
     # In[27]:
     chrom_size_dict = JBAT.get_chrom_size_from_agp(all_agp)
     with open("{}.Chrom.sizes".format(code), 'w') as outfiles:
@@ -1791,19 +1768,46 @@ if __name__ == "__main__":
         for scaffold in chrom_keys:
             outfiles.write("{}\t{}\n".format(scaffold, chrom_size_dict[scaffold]))
 
-    # In[30]:
-    converscript.convert_data(chrom_size_dict,"{}.txt".format(code),"{}.txt".format(code) + ".re")
-    # subprocess.run("python {0} {1} {2} {3}".format(converscript, "{}.Chrom.sizes".format(code),
-    #                                                contact_file.format(iteration),
-    #                                                contact_file.format(iteration) + ".re"),
-    #                shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format("{}.txt".format(code)+ ".re",
-                                                                    "{}.txt".format(code) + ".re.sort"),
-                   shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run("{0} pre {1} {2}.hic {3}".format(juicer_tools,
-                                                    "{}.txt".format(code) + ".re.sort",code,
-                                                    "{}.Chrom.sizes".format(code)), shell=True, check=True,
-                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    remove_path("{}.txt".format(code))
-    remove_path("{}.txt".format(code)+ ".re")
-    remove_path("{}.txt".format(code) + ".re.sort")
+    if not args.skip_hic:
+        # In[19]:
+
+        fake_chrom_dict, Scaffold_dict_list, scaffold_index_dict,faker_scaffold_len_dict = JBAT.get_convert_info(all_agp)
+
+        # In[20]:
+        # subprocess.run("rm tmp/*", shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run("split -a 3 -n l/{0} -d {1} tmp/{2}".format(Process_num,
+                                                                   "merged_nodups_short_format.txt", "convertemp"),
+                       shell=True,
+                       check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        with h5py.File("tmp/convert.h5", "w") as convert:
+            convert["Scaffold_dict_list"] = dump_pickle(Scaffold_dict_list)
+            convert["scaffold_index_dict"] = dump_pickle(scaffold_index_dict)
+            convert["fake_chrom_dict"] = dump_pickle(fake_chrom_dict)
+            convert["faker_scaffold_len_dict"] = dump_pickle(faker_scaffold_len_dict)
+            convert["binsize"] = binsize
+        list_temp_names = []
+        for i in range(Process_num):
+            list_temp_names.append("tmp/{0}{1:0>3d}".format("convertemp", i))
+
+        with Pool(processes=Process_num) as pool:
+            pool.map(convert_contactmat, list_temp_names)
+        merge_tmp_re_files("convertemp", "{}.txt".format(code), clean_tmp=True)
+
+
+
+        # In[30]:
+        converscript.convert_data(chrom_size_dict,"{}.txt".format(code),"{}.txt".format(code) + ".re")
+        # subprocess.run("python {0} {1} {2} {3}".format(converscript, "{}.Chrom.sizes".format(code),
+        #                                                contact_file.format(iteration),
+        #                                                contact_file.format(iteration) + ".re"),
+        #                shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run("LC_ALL=C sort -k2,2 -k6,6 {0}>{1}".format("{}.txt".format(code)+ ".re",
+                                                                        "{}.txt".format(code) + ".re.sort"),
+                       shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run("{0} pre {1} {2}.hic {3}".format(juicer_tools,
+                                                        "{}.txt".format(code) + ".re.sort",code,
+                                                        "{}.Chrom.sizes".format(code)), shell=True, check=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        remove_path("{}.txt".format(code))
+        remove_path("{}.txt".format(code)+ ".re")
+        remove_path("{}.txt".format(code) + ".re.sort")

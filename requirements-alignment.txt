@@ -1,0 +1,2 @@
+# Optional: needed only for BAM/SAM input.
+pysam>=0.22,<0.24

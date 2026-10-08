@@ -10,7 +10,6 @@ def convert_data(chromsize: dict, inputfilename: str, outputfilename):
     # readname=0
     with open(inputfilename) as inputfile:
         with open(outputfilename, 'w') as outputfile:
-            inputfile.readline()
             for item in inputfile:
                 itemlist = item.strip().split('\t')[:8]
                 if ord_scaffold.index(itemlist[1]) > ord_scaffold.index(itemlist[5]):
